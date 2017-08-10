@@ -14,23 +14,20 @@ source $(pwd)/libs/utils.sh
 #
 
 # 1
-prepareSkel
+# prepareSkel
 
 # 2
 # installDefPkgSuit
 
 # 3
-#user="test001"
-#pwd="123"
-#createAdmUser $user $pwd
+user="test001"
+pwd="ABX@kjhk_*"
+rollUpIt $user $pwd
 
 # 4
 # prepareSudoersd
 
 # 5
-# rollUpIt "test002" "1234"
-
-# 6
 #isMatchingRes="false"
 #pwd="1234567"
 #isPwdMatching $pwd isMatchingRes

@@ -12,7 +12,7 @@ printf "$debug_prefix [$2] parameter #2 \n"
 	prepareSkel
 	installDefPkgSuit
 	createAdmUser $1 $2
-	prepareSudoers
+	prepareSudoersd $1
 }
 
 function prepareSkel()
@@ -33,8 +33,17 @@ printf "$debug_prefix [SKELETON_DIR] $SKEL_DIR_ROLL_UP_IT \n"
 	fi
 }
 
-function prepareSudoers()
+function prepareSudoersd()
 {
+debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+printf "$debug_prefix enter the function \n"
+
+if [ -z "$1" ]
+then
+	printf "$debug_prefix No user name specified [$1] \n"
+	exit 1;
+fi
+
 sudoers_file="/etc/sudoers.d/admins.`hostname`"
 sudoers_add="
 User_Alias	LOCAL_ADM_GROUP = $1
@@ -44,9 +53,9 @@ User_Alias	LOCAL_ADM_GROUP = $1
 
 LOCAL_ADM_GROUP ALL=ALL
 "
-if [ ! -f $sudoers_dir ]
+if [ ! -f $sudoers_file ]
 then
-	mkdir $sudoers_file
+	touch $sudoers_file
 	echo "$sudoers_add" > $sudoers_file
 fi
 }
@@ -138,7 +147,7 @@ pwd="$1"
 # special characters
 sch_regexp='^.*[!@#$^\&\*]{1,12}.*$'
 # must be a length
-len_regexp='^.{6,12}$'
+len_regexp='^.{6,20}$'
 # denied special characters
 denied_sch_regexp='^.*[\s.;:]+.*$'
 
