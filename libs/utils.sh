@@ -24,7 +24,9 @@ printf "$debug_prefix [SKELETON_DIR] $SKEL_DIR_ROLL_UP_IT \n"
 	if [ -n "$SKEL_DIR_ROLL_UP_IT" ] && [ -d "$SKEL_DIR_ROLL_UP_IT" ]
 	then
 		printf "$debug_prefix Skel dir existst: $SKEL_DIR_ROLL_UP_IT \n"
-		find $SKEL_DIR_ROLL_UP_IT -mindepth 1 -maxdepth 1 | xargs cp -rft /etc/skel
+#		find $SKEL_DIR_ROLL_UP_IT -mindepth 1 -maxdepth 1 | xargs cp -rvtf /etc/skel
+		find /etc/skel/ -mindepth 1 -maxdepth 1 | xargs rm -Rf
+		rsync -rtvu --delete $SKEL_DIR_ROLL_UP_IT/ /etc/skel
 	else
 		printf "$debug_prefix Skel dir doesn't exist\n"
 		exit 1;
