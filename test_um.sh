@@ -21,21 +21,13 @@ source $(pwd)/libs/um.sh
 
 # 3
 user="test001"
-pwd="ABX@kjhk_*"
-#rollUpIt $user $pwd
-
-rollUpIt $user 
+pwd="ABX@kjhk_*12"
+rollUpIt $user $pwd
 
 # 4
 # prepareSudoersd
 
 # 5
-<<<<<<< HEAD:test_um.sh
-rollUpIt "likhobabin_im" "jhgjg@A123_**"
-
-# 6
-=======
->>>>>>> 4027d7ba9b659268682be2af3b855ae06236f0ee:test_um.sh
 #isMatchingRes="false"
 #pwd="1234567"
 #isPwdMatching $pwd isMatchingRes
