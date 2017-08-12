@@ -28,7 +28,7 @@ source $(pwd)/libs/um.sh
 # prepareSudoersd
 
 # 5
-rollUpIt "likhobabin_im" "LIM@qxF29y2ol*"
+rollUpIt "likhobabin_im" "jhgjg@A123_**"
 
 # 6
 #isMatchingRes="false"
