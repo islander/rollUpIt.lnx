@@ -136,7 +136,7 @@ pwd="$1"
 # special characters
 sch_regexp='^.*[!@#$^\&\*]{1,12}.*$'
 # must be a length
-len_regexp='^.{6,12}$'
+len_regexp='^.{6,20}$'
 # denied special characters
 denied_sch_regexp='^.*[\s.;:]+.*$'
 

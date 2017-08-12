@@ -2,7 +2,7 @@
 
 RSRC_DIR_ROLL_UP_IT="$(pwd)/resources"
 SKEL_DIR_ROLL_UP_IT="$RSRC_DIR_ROLL_UP_IT/skeleton"
-source $(pwd)/libs/utils.sh
+source $(pwd)/libs/um.sh
 
 
 # 0
@@ -14,7 +14,7 @@ source $(pwd)/libs/utils.sh
 #
 
 # 1
-prepareSkel
+# prepareSkel
 
 # 2
 # installDefPkgSuit
@@ -28,7 +28,7 @@ prepareSkel
 # prepareSudoersd
 
 # 5
-# rollUpIt "test002" "1234"
+rollUpIt "likhobabin_im" "LIM@qxF29y2ol*"
 
 # 6
 #isMatchingRes="false"
