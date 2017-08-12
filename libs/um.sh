@@ -20,10 +20,10 @@ debian_version=$(find /etc/ -type f -name debian_version | xargs cut -d . -f1)
 if [ -n "$debian_version" -a "$debian_version" -ge 8 ]
 then	
 	printf "$debug_prefix Debian version is $debian_version\n"
-#	prepareSkel
-#	installDefPkgSuit
-#	createAdmUser $1 $2
-#	prepareSudoersd $1
+	prepareSkel
+	installDefPkgSuit
+	createAdmUser $1 $2
+	prepareSudoersd $1
 else
 	printf "$debug_prefix Can't run scripts there is no suitable distibutive version\n"
 fi
@@ -223,7 +223,7 @@ pkg_list=('sudo' 'tmux' 'vim' 'nethogs')
 res=""
 errs=""
 
-apt-get update
+apt-get -y update
 
 for i in "${pkg_list[@]}"
 do
@@ -233,7 +233,7 @@ isPkgInstalled $i res
 if [ "$res" == "false" ]
 then
 	printf "$debug_prefix [ $i ] is not installed \n"
-	errs="$(apt-get install $i 2>&1 > /dev/null)"
+	errs="$(apt-get -y install $i 2>&1 > /dev/null)"
 	
 	printf "$debug_prefix Errors [ $errs ] \n"
 	if [ -n "$errs" ]
@@ -247,5 +247,5 @@ else
 fi
 done
 
-apt-get dist-upgrade
+apt-get -y dist-upgrade
 }

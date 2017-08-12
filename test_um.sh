@@ -4,7 +4,6 @@ RSRC_DIR_ROLL_UP_IT="$(pwd)/resources"
 SKEL_DIR_ROLL_UP_IT="$RSRC_DIR_ROLL_UP_IT/skeleton"
 source $(pwd)/libs/um.sh
 
-
 # 0
 #pkg=$1
 #res="empty"
@@ -20,8 +19,8 @@ source $(pwd)/libs/um.sh
 # installDefPkgSuit
 
 # 3
-user="test001"
-pwd="ABX@kjhk_*12"
+user="likhobabin_im"
+pwd="KLKLK:LK100"
 rollUpIt $user $pwd
 
 # 4
