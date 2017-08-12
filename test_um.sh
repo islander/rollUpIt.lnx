@@ -22,7 +22,9 @@ source $(pwd)/libs/utils.sh
 # 3
 user="test001"
 pwd="ABX@kjhk_*"
-rollUpIt $user $pwd
+#rollUpIt $user $pwd
+
+rollUpIt $user 
 
 # 4
 # prepareSudoersd
