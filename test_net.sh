@@ -1,5 +1,13 @@
 #! /bin/bash
 
+set -o errexit
+set -o nounset
+set -o xtrace
+
 source $(pwd)/libs/net.sh
 
-flushNetwork
+function main() {
+    flushNetwork
+}
+
+main

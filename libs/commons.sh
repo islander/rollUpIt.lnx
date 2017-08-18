@@ -1,14 +1,16 @@
 #!/bin/bash
 
-#set -e
+set -o errexit
+# To be failed when it tries to use undeclare variables
+set -o nounset
 
 function isPwdMatching()
 {
-debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 printf "$debug_prefix enter the function \n"
 printf "$debug_prefix [$1] parameter #1 \n"
 
-pwd="$1"
+local passwd="$1"
 
 # Regexpression definition
 # special characters
@@ -19,56 +21,54 @@ len_regexp='^.{6,20}$'
 denied_sch_regexp='^.*[\s.;:]+.*$'
 
 local isMatching=$2
-count=0
-if [ -n $pwd ] 
-then
-	if [[ $pwd =~ $len_regexp ]];
-	then
-		((count++))
+declare -i iocal count=0
+if [[ -n $passwd ]]; then
+	if [[ $passwd =~ $len_regexp ]]; then
+		count=count+1
 		printf "$debug_prefix The string [$pwd] ge 6 len \n"
+	else
+		printf "$debug_prefix Start matching \n"
 	fi
-	if [[ $pwd =~ [[:alnum:]] ]];
-	then
+	if [[ $passwd =~ [[:alnum:]] ]]; then
 		((count++))
 		printf "$debug_prefix The string [$pwd] contains alpha-num  \n"
 	fi
-	if [[ $pwd =~ $sch_regexp ]];
-	then
+	if [[ $passwd =~ $sch_regexp ]]; then
 		((count++))
 		printf "$debug_prefix The string [$pwd] contains special chars  \n" 
 	fi
-	if  [[ ! $pwd =~ $denied_sch_regexp ]];
-	then
+    if  [[ ! $passwd =~ $denied_sch_regexp ]];	then
 		((count++))
 		printf "$debug_prefix The string [$pwd] doesn't contain the denied special chars: [.;:] \n" 
 	fi
 	printf "$debug_prefix Count is $count \n"
-	if [ $count -eq 4 ]
-	then
+	if [[ $count -eq 4 ]]; then
 		printf "$debug_prefix The string is mathching the regexp \n"
-		eval $isMatching='true'
+		eval $isMatching="true"
+    else 
+        printf "$debug_prefix The string is not matching the regexp. Count [$count]\n"
 	fi
+else 
+	printf "$debug_prefix Pwd is empty\n"
 fi
 }
 
 function isPkgInstalled()
 {
-debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 printf "$debug_prefix enter the function \n"
 printf "$debug_prefix [$1] parameter #1 \n"
 printf "$debug_prefix [$2] parameter #2 \n"
 
-if [ -n $1 ]
-then
-	ii_status="Status: install ok installed"
+if [[ -n $1 ]]; then
+	declare -r local ii_status="Status: install ok installed"
 	local isInstalled=$2
 	pkg_res="`dpkg-query -s $1 2>/dev/null | grep -n "$ii_status"`"
 	
-	if [ -n "$pkg_res" ]
-	then
-		eval $isInstalled='true'
+	if [[ -n "$pkg_res" ]]; then
+		eval $isInstalled="true"
 	else
-		eval $isInstalled='false'
+		eval $isInstalled="false"
 	fi
 else
 	printf "$debug_prefix no package name passed \n"
@@ -76,52 +76,44 @@ fi
 }
 
 function installPkg() {
-debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
-if [ -z $1 ]
-then
+local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+if [[ -z $1 ]]; then
 	printf "$debug_prefix Package name has not been passed\n"
 	exit 1;
 fi
 
-#if [ -n "$2" ]
-#then
-#	# calling prepare function
-#	printf "$debug_prefix Calling prepare function: [$2] \n"
-#	prep_func_out="$($2)"
-#	if [ -n "$prep_func_out" ]
-#	then
-#		printf "$debug_prefix Prepare function output [ $prep_func_out ]\n"
-#	fi
-#fi
+if [[ -v $2 && -n "$2" ]]; then
+	# calling prepare function
+	printf "$debug_prefix Calling prepare function: [$2] \n"
+	local prep_func_out="$($2)"
+	if [[ -n "$prep_func_out" ]]; then
+		printf "$debug_prefix Prepare function output [ $prep_func_out ]\n"
+	fi
+fi
 
-if [ -n "$2" -a "$2" == "q" ]
-then 	
+if [[ "$2" == "q" ]]; then	
 	apt-get -y update
 else
 	apt-get update
 fi
 
-res=""
-errs=""
+local res=""
+local errs=""
 isPkgInstalled $1 res
-if [ "$res" == "false" ]
-then	
+if [[ "$res" == "false" ]]; then	
 	printf "$debug_prefix [ $1 ] will be installed\n"
 
-	if [ -n "$2" -a "$2" == "q" ]
-	then 	
+	if [[ "$2" == "q" ]]; then 	
 		apt-get -y install $1 2>stream_errs.log
 	else
 		apt-get install $1 2>stream_errs.log
 	fi
 
-	if [ -e stream_errs.log ] 
-	then
+	if [[ -e stream_errs.log ]]; then
 		errs=$(cat "$(pwd)/stream_errs.log") 
 	fi
 
-	if [ -n "$errs" ]
-	then 
+	if [[ -n "$errs" ]]; then 
 		printf "$debug_prefix Package [ $1 ] can't be installed\n"
 		printf "Errors: <<<<<< \n $errs \n <<<<<"		
 	else
@@ -131,8 +123,7 @@ else
     printf "$debug_prefix Package [$1] is installed\n"
 fi
 
-if [ -n "$2" -a "$2" == "q" ]
-then 	
+if [[ "$2" == "q" ]]; then 	
     apt-get -y update
 else
 	apt-get update

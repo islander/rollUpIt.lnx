@@ -1,11 +1,16 @@
 #!/bin/bash
 
+set -o errexit
+set -o xtrace
+set -o nounset
+
 source $(pwd)/libs/commons.sh
 source $(pwd)/libs/um.sh
-
-RSRC_DIR_ROLL_UP_IT="$(pwd)/resources"
-SKEL_DIR_ROLL_UP_IT="$RSRC_DIR_ROLL_UP_IT/skeleton"
 source $(pwd)/libs/um.sh
+
+function main() {
+declare -r RSRC_DIR_ROLL_UP_IT="$(pwd)/resources"
+declare -r SKEL_DIR_ROLL_UP_IT="$RSRC_DIR_ROLL_UP_IT/skeleton"
 
 # 0
 #pkg=$1
@@ -22,8 +27,8 @@ source $(pwd)/libs/um.sh
 # installDefPkgSuit
 
 # 3
-user="likhobabin_im"
-pwd="KLKLK:LK100"
+declare -r user="test001"
+declare -r pwd="KLKLK@aLK100"
 rollUpIt $user $pwd
 
 # 4
@@ -43,3 +48,6 @@ rollUpIt $user $pwd
 #fi
 #
 #printf "\n"
+}
+
+main 
