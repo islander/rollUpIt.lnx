@@ -1,5 +1,8 @@
 #!/bin/bash
 
+source $(pwd)/libs/commons.sh
+source $(pwd)/libs/um.sh
+
 RSRC_DIR_ROLL_UP_IT="$(pwd)/resources"
 SKEL_DIR_ROLL_UP_IT="$RSRC_DIR_ROLL_UP_IT/skeleton"
 source $(pwd)/libs/um.sh

@@ -1,0 +1,11 @@
+Entering debug: [./test_cfgIt.sh] [ [0] ] : 
+Entering debug: [./test_cfgIt.sh] [ installJava[0] ] : 
+debug: [./test_cfgIt.sh] [ installPkg[0] ] :  Prepare function output [ debug: [./test_cfgIt.sh] [ isPkgInstalled[0] ] :  enter the function 
+debug: [./test_cfgIt.sh] [ isPkgInstalled[0] ] :  [software-properties-common] parameter #1 
+debug: [./test_cfgIt.sh] [ isPkgInstalled[0] ] :  [res] parameter #2 
+debug: [./test_cfgIt.sh] [ isPkgInstalled[0] ] :   [ ppa_webupd8team_java ] has been successfully added  ]
+debug: [./test_cfgIt.sh] [ isPkgInstalled[0] ] :  enter the function 
+debug: [./test_cfgIt.sh] [ isPkgInstalled[0] ] :  [oracle-java8-installer] parameter #1 
+debug: [./test_cfgIt.sh] [ isPkgInstalled[0] ] :  [res] parameter #2 
+debug: [./test_cfgIt.sh] [ isPkgInstalled[0] ] :  [ oracle-java8-installer ] will be installed
+debug: [./test_cfgIt.sh] [ isPkgInstalled[0] ] :  Package [ oracle-java8-installer ] has been successfully installed
