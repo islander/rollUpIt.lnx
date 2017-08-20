@@ -64,6 +64,11 @@ LOCAL_ADM_GROUP ALL=ALL
 if [[ ! -f $sudoers_file ]]; then
 	touch $sudoers_file
 	echo "$sudoers_add" > $sudoers_file
+else
+    # add new user
+    awk -v "user_name=$1" '/^User_Alias/ {
+        print $0,user_name
+    }'
 fi
 }
 
