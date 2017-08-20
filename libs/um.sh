@@ -66,9 +66,19 @@ if [[ ! -f $sudoers_file ]]; then
 	echo "$sudoers_add" > $sudoers_file
 else
     # add new user
-    awk -v "user_name=$1" '/^User_Alias/ {
+    local replace_str=""
+    replace_str=$(awk -v "user_name=$1" '/^User_Alias/ {
         print $0,user_name
-    }'
+    }' $sudoers_file)
+
+    if [[ -n "replace_str" ]]; then
+        # - to write to a file: use -i option
+        # - to use shell variables use double qoutes
+        sed -i "s/^User_Alias.*$/$replace_str/g" $sudoers_file
+    else 
+        printf "$debug_prefix Erro Can't find User_Alias string\n"
+        exit 1
+    fi
 fi
 }
 

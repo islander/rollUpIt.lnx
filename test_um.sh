@@ -27,12 +27,12 @@ declare -r SKEL_DIR_ROLL_UP_IT="$RSRC_DIR_ROLL_UP_IT/skeleton"
 # installDefPkgSuit
 
 # 3
-declare -r user="test001"
-declare -r pwd="KLKLK@aLK100"
-rollUpIt $user $pwd
-
+#declare -r user="test001"
+#declare -r pwd="KLKLK@aLK100"
+#rollUpIt $user $pwd
+#
 # 4
-# prepareSudoersd
+prepareSudoersd "user_001"
 
 # 5
 #isMatchingRes="false"
