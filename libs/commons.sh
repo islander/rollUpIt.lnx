@@ -130,3 +130,30 @@ else
 fi
 }
 
+#
+# 
+# pf - processing file
+# sf - search field
+# fv - a new field value
+# dm - fields delimeter
+#
+function setField() {
+    local debug_prefix="debug: [$0] [ $FUNCNAME[0 ] : "
+    declare -r local pf="$1"
+    declare -r local sf="$2"
+    declare -r local fv="$3"
+    declare -r local dm="$([ -z "$4" ] && echo ": " || echo "$4" )"
+
+    if [[ -z "$pf" || -z "$sf" || -z "$fv" ]]; then 
+         printf "$debug_prefix Empty passed parameters\n"
+         exit 1
+    fi
+
+    if [[ ! -e "$pf" ]]; then
+        printf  "$debug_prefix No processing file\n"
+        exit 1 
+    fi
+    declare -r local replace_str="$sf$dm$fv"
+    sed -i "s/.*$sf.*$/$replace_str/" $pf
+}
+

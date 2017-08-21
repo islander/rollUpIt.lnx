@@ -107,3 +107,55 @@ function installGraylog2() {
     installPkg "graylog-server" ""
     rm -f /etc/init/graylog-server.override
 }
+
+#
+#Arguments: 
+#   cluster_name
+#   node_name
+#   addr_bind
+#
+function configureElasticSearch() {
+    local debug_prefix="debug: [$0] [ $FUNCNAME[0 ] : "
+    declare -r local config_path="/etc/elasticsearch/elasticsearch.yml"
+    declare -r local cluster_name_value=$([ -z "$1" ] && echo "logger" || echo "$1")
+    declare -r local node01_name_value=$([ -z "$2" ] && echo "logger-node01" || echo "$2")
+    declare -r local addr_bind_value=$([ -z "$3" ] && echo "localhost" || echo "$3")
+
+    declare -r local log_path="\/var\/log\/elasticsearch"
+    declare -r local data_path="\/var\/data\/elasticsearcha"
+
+    setField "$config_path" "cluster.name" "$cluster_name_value"
+    setField "$config_path" "node.name" "$node01_name_value"
+    setField "$config_path" "network.host" "$addr_bind_value"
+    setField "$config_path" "path.logs" "$log_path"
+    setField "$config_path" "path.data" "$data_path"
+}
+
+function autoStartElasticSearch() {
+    local debug_prefix="debug: [$0] [ $FUNCNAME[0 ] : "
+
+    systemctl daemon-reload
+    systemctl enable elasticsearch.service
+    systemctl start elasticsearch.service
+}
+
+function configureGraylog2() {
+    local debug_prefix="debug: [$0] [ $FUNCNAME[0 ] : "
+
+    declare -r local passwd="$1"
+    declare -r local root_passwd="$2"
+    if [[ -z "$1" || -z "$2" ]]; then 
+        printf "$debug_prefix No passwords has been passed\n"
+        exit 1
+    fi
+    
+    installPkg "pwgen"
+    declare -r local secret_passwd="$(pwgen -N 1 -s 96)"
+    declare -r local secret_root_passwd="$(shasum -a 256)"
+    # declare -r local graylog_srv_conf_path="/etc/graylog/server/server.conf"
+    declare -r local graylog_srv_conf_path="${pwd}/resources/graylog/server/server.conf"
+
+    setField "$graylog_srv_conf_path" "password_secret" "$secret_passwd" " = "
+    setField "$graylog_srv_conf_path" "root_password_sha2" "$secret_root_passwd" " = "
+    setField "$graylog_srv_conf_path" "elasticsearch_shards" "1" " = "
+}
