@@ -4,8 +4,8 @@ set -o errexit
 set -o nounset
 set -o xtrace
 
-#exec 1>output.log
-#exec 2>errors.log
+exec 1>stdout.log
+exec 2>stderr.log
 
 source ../libs/commons.sh
 source ../libs/um.sh
@@ -18,11 +18,11 @@ function main() {
     printf "Entering $debug_prefix\n"
     declare -r local config_path="/etc/elasticsearch/elasticsearch.yml" 
 
-#    installGrayLog2 
-#    configureElasticSearch "" "" "" 
-#    autostartElasticSearch 
-    configureGraylog2 "RfynhfDbrfnf"
-#    autostartGraylog2    
+    installGraylog2 
+    configureElasticSearch "" "" "" 
+    autostartElasticSearch 
+    configureGraylog2 "12345678"
+    autostartGraylog2    
 #    local res=""
 #    local ii_status="Status: install ok installed"
 #    res="$(dpkg-query -s $1 2>stream_errs.log | grep "$ii_status" || cat stream_errs.log)"
@@ -37,6 +37,6 @@ function main() {
 #   echo "$res" 
 }
 
-main "sudo"
+main 
 
 

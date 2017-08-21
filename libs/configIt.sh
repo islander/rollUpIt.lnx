@@ -91,14 +91,14 @@ function installGraylog2() {
 
     if [[ "$res" == "true" ]]; then
         printf "$debug_prefix Graylog2 has been already installed [ $res ]\n"
-        exit 1
+        #exit 1
     fi
     if [[ ! -d /usr/local/src/graylog2-src ]]; then
         mkdir /usr/local/src/graylog2-src
         cd /usr/local/src/graylog2-src
     else
         printf "$debug_prefix It seems Graylog2 has been already installed\n"
-        exit 1
+        #exit 1
     fi
 
     installPkg "apt-transport-https" ""
@@ -116,6 +116,12 @@ function installGraylog2() {
 #
 function configureElasticSearch() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0 ] : "
+
+    if [[ ! -e /var/data/elasticsearch ]]; then
+        mkdir /var/data/elasticsearch 
+        chown -R elasticsearch:elasticsearch /var/data/elasticsearch
+    fi
+    
     declare -r local config_path="/etc/elasticsearch/elasticsearch.yml"
     declare -r local cluster_name_value=$([ -z "$1" ] && echo "logger" || echo "$1")
     declare -r local node01_name_value=$([ -z "$2" ] && echo "logger-node01" || echo "$2")
@@ -151,8 +157,8 @@ function configureGraylog2() {
     installPkg "pwgen" ""
     declare -r local secret_passwd="$(pwgen -N 1 -s 96)"
     declare -r local cyphered_root_passwd="$(echo $passwd | shasum -a 256)"
-   # declare -r local graylog_srv_conf_path="/etc/graylog/server/server.conf"
-   declare -r local graylog_srv_conf_path="$(pwd)/resources/graylog/server/server.conf"
+    declare -r local graylog_srv_conf_path="/etc/graylog/server/server.conf"
+    # declare -r local graylog_srv_conf_path="$(pwd)/resources/graylog/server/server.conf"
 
     setField "$graylog_srv_conf_path" "password_secret" "$secret_passwd" " = "
     setField "$graylog_srv_conf_path" "root_password_sha2" "$cyphered_root_passwd" " = "

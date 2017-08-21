@@ -116,8 +116,8 @@ if [[ "$res" == "false" ]]; then
 	fi
 
 	if [[ -n "$errs" ]]; then 
-		printf "$debug_prefix Package [ $1 ] can't be installed\n"
-		printf "Errors: <<<<<< \n $errs \n <<<<<"		
+		printf "$debug_prefix Error Package [ $1 ] can't be installed\n"
+        exit 1
 	else
 		printf "$debug_prefix Package [ $1 ] has been successfully installed\n"
 	fi
@@ -157,6 +157,6 @@ function setField() {
         exit 1 
     fi
     declare -r local replace_str="$sf$dm$fv"
-    sed -i "s/.*$sf.*$/$replace_str/" $pf
+    sed -i "0,/.*$sf.*$/ s/.*$sf.*$/$replace_str/" $pf
 }
 

@@ -107,11 +107,13 @@ if [[ -n "$1" && -n "$2" ]]; then
 	fi
 	
 	printf "debug: [ $0 ] There is no [ $1 ] user, let's create him \n"
+    # TODO: rewrite errors processing
 	local errs="$(adduser $1 --gecos "$1" --disabled-password 2>&1 1>/dev/null)"
 	if [[ -n "$errs" ]]; then
 		printf "$debug_prefix Can't create the user: [ $errs ]"		
 		exit 1;
 	else
+    # TODO: rewrite errors processing
 		errs=$(echo "$1:$2" | chpasswd 2>&1 1>/dev/null)
 		if [[ -n "$errs" ]]; then
 			printf "$debug_prefix Can't set password to the user: [ $errs ] \n"	
