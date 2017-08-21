@@ -62,14 +62,15 @@ printf "$debug_prefix [$2] parameter #2 \n"
 
 if [[ -n $1 ]]; then
 	declare -r local ii_status="Status: install ok installed"
-	local isInstalled=$2
-	pkg_res="`dpkg-query -s $1 2>/dev/null | grep -n "$ii_status"`"
-	
-	if [[ -n "$pkg_res" ]]; then
+    local isInstalled=$2
+    local errs=""
+    local _res=""
+    _res="$(dpkg-query -s $1 2>stream_error.log | grep "$ii_status" || cat stream_errs.log)"
+	if [[  "$_res" == "$ii_status" ]]; then
 		eval $isInstalled="true"
-	else
+    else
 		eval $isInstalled="false"
-	fi
+    fi
 else
 	printf "$debug_prefix no package name passed \n"
 fi
@@ -97,9 +98,10 @@ else
 	apt-get update
 fi
 
-local res=""
+res=""
 local errs=""
 isPkgInstalled $1 res
+echo "isPkgInstalled res [ $res ]"
 if [[ "$res" == "false" ]]; then	
 	printf "$debug_prefix [ $1 ] will be installed\n"
 
@@ -143,6 +145,7 @@ function setField() {
     declare -r local sf="$2"
     declare -r local fv="$3"
     declare -r local dm="$([ -z "$4" ] && echo ": " || echo "$4" )"
+#    echo "$debug_prefix [ dm ] is $dm"
 
     if [[ -z "$pf" || -z "$sf" || -z "$fv" ]]; then 
          printf "$debug_prefix Empty passed parameters\n"

@@ -1,0 +1,38 @@
+Entering debug: [./test_cfgIt.sh] [ main[0] ] : 
+Hit:1 http://ppa.launchpad.net/webupd8team/java/ubuntu xenial InRelease
+Ign:2 http://ftp.debian.org/debian stretch InRelease
+Hit:3 http://ftp.debian.org/debian stretch-updates InRelease
+Hit:4 http://security.debian.org stretch/updates InRelease
+Hit:5 http://ftp.debian.org/debian stretch Release
+Ign:7 http://downloads-distro.mongodb.org/repo/debian-sysvinit dist InRelease
+Ign:8 http://packages.elastic.co/elasticsearch/2.x/debian stable InRelease
+Ign:9 https://packages.graylog2.org/repo/debian stable InRelease
+Hit:10 http://packages.elastic.co/elasticsearch/2.x/debian stable Release
+Get:13 http://downloads-distro.mongodb.org/repo/debian-sysvinit dist Release [2040 B]
+Get:14 http://downloads-distro.mongodb.org/repo/debian-sysvinit dist Release.gpg [490 B]
+Ign:14 http://downloads-distro.mongodb.org/repo/debian-sysvinit dist Release.gpg
+Hit:12 https://packages.graylog2.org/repo/debian stable Release
+Hit:16 http://downloads-distro.mongodb.org/repo/debian-sysvinit dist/10gen amd64 Packages
+Fetched 2530 B in 2s (899 B/s)
+Reading package lists...
+debug: [./test_cfgIt.sh] [ isPkgInstalled[0] ] :  enter the function 
+debug: [./test_cfgIt.sh] [ isPkgInstalled[0] ] :  [pwgen] parameter #1 
+debug: [./test_cfgIt.sh] [ isPkgInstalled[0] ] :  [res] parameter #2 
+debug: [./test_cfgIt.sh] [ isPkgInstalled[0] ] :  Package is not installed
+isPkgInstalled res [  ]
+debug: [./test_cfgIt.sh] [ installPkg[0] ] :  Package [pwgen] is installed
+Hit:1 http://security.debian.org stretch/updates InRelease
+Ign:2 http://ftp.debian.org/debian stretch InRelease
+Hit:3 http://ppa.launchpad.net/webupd8team/java/ubuntu xenial InRelease
+Hit:4 http://ftp.debian.org/debian stretch-updates InRelease
+Ign:5 http://downloads-distro.mongodb.org/repo/debian-sysvinit dist InRelease
+Ign:6 http://packages.elastic.co/elasticsearch/2.x/debian stable InRelease
+Hit:7 http://ftp.debian.org/debian stretch Release
+Ign:9 https://packages.graylog2.org/repo/debian stable InRelease
+Hit:10 http://packages.elastic.co/elasticsearch/2.x/debian stable Release
+Hit:13 http://downloads-distro.mongodb.org/repo/debian-sysvinit dist Release
+Get:14 http://downloads-distro.mongodb.org/repo/debian-sysvinit dist Release.gpg [490 B]
+Ign:14 http://downloads-distro.mongodb.org/repo/debian-sysvinit dist Release.gpg
+Hit:12 https://packages.graylog2.org/repo/debian stable Release
+Fetched 490 B in 1s (249 B/s)
+Reading package lists...

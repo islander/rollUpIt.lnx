@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o errexit
-#set -o nounset
+set -o nounset
 set -o xtrace
 
 #exec 1>output.log
@@ -16,12 +16,27 @@ source ../libs/configIt.sh
 function main() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     printf "Entering $debug_prefix\n"
+    declare -r local config_path="/etc/elasticsearch/elasticsearch.yml" 
 
-    installGrayLog2 
-    configureElasticSearch "" "" "" 
-    autoStartElasticSearch 
+#    installGrayLog2 
+#    configureElasticSearch "" "" "" 
+#    autostartElasticSearch 
+    configureGraylog2 "RfynhfDbrfnf"
+#    autostartGraylog2    
+#    local res=""
+#    local ii_status="Status: install ok installed"
+#    res="$(dpkg-query -s $1 2>stream_errs.log | grep "$ii_status" || cat stream_errs.log)"
+#    echo "$debug_prefix $res"
+#    if [[  "$res" == "$ii_status" ]]; then
+#        echo "$debug_prefix Package is installed"
+#    else
+#        echo "$debug_prefix Package is not installed"
+#    fi
+#   res=""
+#   isPkgInstalled "pwgen" res
+#   echo "$res" 
 }
 
-main
+main "sudo"
 
 
