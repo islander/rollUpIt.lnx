@@ -1,8 +1,0 @@
-Warning: apt-key output should not be parsed (stdout is not a terminal)
-gpg: keyserver receive failed: No keyserver available
-W: GPG error: http://downloads-distro.mongodb.org/repo/debian-sysvinit dist Release: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 9ECBEC467F0CEB10
-W: The repository 'http://downloads-distro.mongodb.org/repo/debian-sysvinit dist Release' is not signed.
-W: GPG error: http://downloads-distro.mongodb.org/repo/debian-sysvinit dist Release: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 9ECBEC467F0CEB10
-W: The repository 'http://downloads-distro.mongodb.org/repo/debian-sysvinit dist Release' is not signed.
-W: GPG error: http://downloads-distro.mongodb.org/repo/debian-sysvinit dist Release: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 9ECBEC467F0CEB10
-W: The repository 'http://downloads-distro.mongodb.org/repo/debian-sysvinit dist Release' is not signed.
