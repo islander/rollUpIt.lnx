@@ -13,12 +13,21 @@ function preJavaInstallation() {
 
 	installPkg "dirmngr" ""
 
+    if [[ -e stream_error.log ]]; then
+        echo "" > stream_error.log
+    fi
+    local errs=""
 	local webupd8team_srclist="/etc/apt/sources.list.d/webupd8team-java.list"
 	if [[ ! -e $webupd8team_srclist ]]; then
 		printf "$debug_prefix Add source lists"
 		echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" > /etc/apt/sources.list.d/webupd8team-java.list
 		echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" >> /etc/apt/sources.list.d/webupd8team-java.list
-		apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
+
+		apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886 2>stream_error.log
+        if [[ -e stream_error.log ]]; then
+            printf "${RED_ROLLUP_IT} $debug_prefix Error: Can't be added Oracle Java 8 APT key: $(cat stream_error.log) ${END_ROLLUP_IT} \n"
+            exit 1
+        fi
 	else
 		printf "$debug_prefix Source list has been updated by webupd8team repository\n"
 	fi
@@ -35,12 +44,21 @@ installPkg "oracle-java8-installer" ""
 function preMongoDBInstallation() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 
+    if [[ -e stream_error.log ]]; then
+        echo "" > stream_error.log
+    fi
+
 	local mongodb_srclist="/etc/apt/sources.list.d/mongodb.list"
 	if [[ ! -e $mongodb_srclist ]];	then
 		printf "$debug_prefix Add source lists"
 		echo "deb http://ftp.debian.org/debian jessie-backports main" > /etc/apt/sources.list.d/mongodb.list
-        apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6lse
-		printf "$debug_prefix Source list has been updated by mongodb repository\n"
+        apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6lse 2> stream_error.log
+        if [[ -e stream_error.log ]]; then
+            errs="$(cat stream_error.log)"
+		    printf "${RED_ROLLUP_IT} $debug_prefix Error: Source list can't be updated with Mongodb repository ${END_ROLLUP_IT}\n"
+            exit 1
+        fi
+		printf "$debug_prefix Source list has been updated wit Mongodb repository\n"
 	fi
 }
 
@@ -48,8 +66,8 @@ function installMongoDB() {
 local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 printf "Entering $debug_prefix\n"
 
-preMongoDBInstallation
-installPkg "mongodb-org" ""
+# preMongoDBInstallation
+installPkg "mongodb-server" ""
 }
 
 function preElasticSearchInstallation() {
@@ -118,7 +136,7 @@ function configureElasticSearch() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0 ] : "
 
     if [[ ! -e /var/data/elasticsearch ]]; then
-        mkdir /var/data/elasticsearch 
+        mkdir -p /var/data/elasticsearch 
         chown -R elasticsearch:elasticsearch /var/data/elasticsearch
     fi
     
@@ -150,7 +168,7 @@ function configureGraylog2() {
 
     declare -r local passwd="$1"
     if [[ -z "$1" ]]; then 
-        printf "$debug_prefix No passwords has been passed\n"
+        printf "${RED_ROLLUP_IT} $debug_prefix No passwords has been passed ${END_ROLLUP_IT} \n"
         exit 1
     fi
     

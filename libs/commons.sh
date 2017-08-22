@@ -65,7 +65,10 @@ if [[ -n $1 ]]; then
     local isInstalled=$2
     local errs=""
     local _res=""
-    _res="$(dpkg-query -s $1 2>stream_error.log | grep "$ii_status" || cat stream_errs.log)"
+    if [[ -e stream_error.log ]]; then
+        echo "" > stream_error.log
+    fi
+    _res="$(dpkg-query -s $1 2>stream_error.log | grep "$ii_status" || cat stream_error.log)"
 	if [[  "$_res" == "$ii_status" ]]; then
 		eval $isInstalled="true"
     else
@@ -79,7 +82,7 @@ fi
 function installPkg() {
 local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 if [[ -z $1 ]]; then
-	printf "$debug_prefix Package name has not been passed\n"
+	printf "${RED_ROLLUP_IT} $debug_prefix Error: Package name has not been passed ${END_ROLLUP_IT} \n"
 	exit 1;
 fi
 
@@ -102,21 +105,26 @@ res=""
 local errs=""
 isPkgInstalled $1 res
 echo "isPkgInstalled res [ $res ]"
+
+if [[ -e stream_error.log ]]; then
+    echo "" > stream_error.log
+fi
+
 if [[ "$res" == "false" ]]; then	
 	printf "$debug_prefix [ $1 ] will be installed\n"
 
 	if [[ "$2" == "q" ]]; then 	
-		apt-get -y install $1 2>stream_errs.log
+		apt-get -y install $1 2>stream_error.log
 	else
-		apt-get install $1 2>stream_errs.log
+		apt-get install $1 2>stream_error.log
 	fi
 
 	if [[ -e stream_errs.log ]]; then
-		errs=$(cat "$(pwd)/stream_errs.log") 
+		errs="$(cat stream_error.log)"
 	fi
 
 	if [[ -n "$errs" ]]; then 
-		printf "$debug_prefix Error Package [ $1 ] can't be installed\n"
+		printf "$debug_prefix ${RED_ROLLUP_IT} Error Package [ $1 ] can't be installed${END_ROLLUP_IT}\n"
         exit 1
 	else
 		printf "$debug_prefix Package [ $1 ] has been successfully installed\n"
@@ -148,12 +156,12 @@ function setField() {
 #    echo "$debug_prefix [ dm ] is $dm"
 
     if [[ -z "$pf" || -z "$sf" || -z "$fv" ]]; then 
-         printf "$debug_prefix Empty passed parameters\n"
+         printf "{RED_ROLLUP_IT} $debug_prefix Empty passed parameters {END_ROLLUP_IT} \n"
          exit 1
     fi
 
     if [[ ! -e "$pf" ]]; then
-        printf  "$debug_prefix No processing file\n"
+        printf "{RED_ROLLUP_IT} $debug_prefix No processing file {END_ROLLUP_IT} \n"
         exit 1 
     fi
     declare -r local replace_str="$sf$dm$fv"

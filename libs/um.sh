@@ -11,7 +11,7 @@ printf "$debug_prefix [$1] parameter #1 \n"
 printf "$debug_prefix [$2] parameter #2 \n"
 
 if [[ -z "$1" || -z "$2" ]]; then
-	printf "$debug_prefix No parameters passed into the function\n"
+	printf "${RED_ROLLUP_IT} $debug_prefix Error: No parameters passed into the function ${END_ROLLUP_IT}\n"
 	exit 1
 fi
 
@@ -24,7 +24,8 @@ if [[ -n "$debian_version" && "$debian_version" -ge 8 ]]; then
 	createAdmUser $1 $2
 	prepareSudoersd $1
 else
-	printf "$debug_prefix Can't run scripts there is no a suitable distibutive version\n"
+	printf "${RED_ROLLUP_IT} $debug_prefix Error: Can't run scripts there is no a suitable distibutive version ${END_ROLLUP_IT} \n"
+    exit 1
 fi
 }
 
@@ -38,7 +39,7 @@ if [[ -n "$SKEL_DIR_ROLL_UP_IT" && -d "$SKEL_DIR_ROLL_UP_IT" ]]; then
     find /etc/skel/ -mindepth 1 -maxdepth 1 | xargs rm -Rf
     rsync -rtvu --delete $SKEL_DIR_ROLL_UP_IT/ /etc/skel
 else
-    printf "$debug_prefix Skel dir doesn't exist\n"
+    printf "${RED_ROLLUP_IT} $debug_prefix Error skel dir doesn't exist ${END_ROLLUP_IT} \n"
     exit 1;
 fi
 }
@@ -88,7 +89,12 @@ local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 printf "$debug_prefix Enter the function \n"
 printf "$debug_prefix [$1] parameter #1 \n"
 printf "$debug_prefix [$2] parameter #2 \n"
+
 local errs=""
+
+if [[ -e stream_error.log ]]; then
+    echo "" > stream_error.log
+fi
 
 if [[ -n "$1" && -n "$2" ]]; then
 	local isExist="$(getent shadow | cut -d : -f1 | grep $1)"
@@ -102,22 +108,30 @@ if [[ -n "$1" && -n "$2" ]]; then
 	isPwdMatching $2 isMatchingRes	
 	if [[ "isMatchingRes" == "false" ]];
 	then
-		printf "$debug_prefix Can't create the user: Password does not match the regexp \n"	
+		printf "${RED_ROLLUP_IT} $$debug_prefix Error: Can't create the user: Password does not match the regexp ${END_ROLLUP_IT} $\n"	
 		exit 1;	
 	fi
 	
 	printf "debug: [ $0 ] There is no [ $1 ] user, let's create him \n"
-    # TODO: rewrite errors processing
 	local errs="$(adduser $1 --gecos "$1" --disabled-password 2>&1 1>/dev/null)"
+
+	adduser $1 --gecos "$1" --disabled-password 2>stream_error.log 1>stdout.log
+
+    if [[ -e stream_error.log ]]; then
+        errs="$(cat stream_error.log)"
+    fi
+
 	if [[ -n "$errs" ]]; then
-		printf "$debug_prefix Can't create the user: [ $errs ]"		
+		printf "${RED_ROLLUP_IT} $debug_prefix Error: Can't create the user: [ $errs ]${END_ROLLUP_IT}"		
 		exit 1;
 	else
-    # TODO: rewrite errors processing
-		errs=$(echo "$1:$2" | chpasswd 2>&1 1>/dev/null)
+		echo "$1:$2" | chpasswd 2>stream_error.log 1>stdout.log
+        if [[ -e stream_error.log ]]; then
+            errs="$(cat stream_error.log)"
+        fi
+
 		if [[ -n "$errs" ]]; then
-			printf "$debug_prefix Can't set password to the user: [ $errs ] \n"	
-			printf "$debug_prefix Delete the user \n"
+			printf "${RED_ROLLUP_IT} $debug_prefix Error: can't set password to the user: [ $errs ]  Delete the user ${END_ROLLUP_IT} \n"	
 			userdel -r $1
 
 			exit 1;
@@ -144,7 +158,7 @@ if [[ -n "$1" && -n "$2" ]]; then
 		fi
 	fi
 else
-	printf "no parameters for creating user \n"
+	printf "${RED_ROLLUP_IT} $debug_prefix Error: no parameters for creating user ${END_ROLLUP_IT} \n"
 	exit 1;
 fi
 }
@@ -161,17 +175,24 @@ apt-get -y update
 for i in "${pkg_list[@]}"; do
 printf "$debug_prefix Current element is $i \n"
 
+if [[ -e stream_error.log ]]; then
+    echo "" > stream_error.log
+fi
+
 isPkgInstalled $i res
 if [[ "$res" == "false" ]]; then
 	printf "$debug_prefix [ $i ] is not installed \n"
-	errs="$(apt-get -y install $i 2>&1 > /dev/null)"
-	
-	printf "$debug_prefix Errors [ $errs ] \n"
+	apt-get -y install $i 2>stream_error.log 1>stdout.log
+    if [[ -e stream_error.log  ]]; then
+        errs="$(cat stream_error.log)"
+    fi
+
 	if [[ -n "$errs" ]]; then
-		printf "$debug_prefix Can't install $i . Error log is $errs \n"
-	else
+		printf "${RED_ROLLUP_IT} $debug_prefix Error: Can't install $i . Text of errors: $errs ${END_ROLLUP_IT} \n"
+        exit 1
+    else
 		printf "$debug_prefix [ $i ] is successfully installed \n" 
-	fi
+    fi
 else
 	printf "$debug_prefix [ $i ] is installed \n"
 fi

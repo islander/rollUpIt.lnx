@@ -4,9 +4,10 @@ set -o errexit
 set -o nounset
 set -o xtrace
 
-exec 1>stdout.log
+# exec 1>stdout.log
 exec 2>stderr.log
 
+source ../libs/addColors.sh
 source ../libs/commons.sh
 source ../libs/um.sh
 source ../libs/configIt.sh
@@ -21,7 +22,7 @@ function main() {
     installGraylog2 
     configureElasticSearch "" "" "" 
     autostartElasticSearch 
-    configureGraylog2 "12345678"
+    configureGraylog2 "RfynhfDbrfnf"
     autostartGraylog2    
 #    local res=""
 #    local ii_status="Status: install ok installed"
