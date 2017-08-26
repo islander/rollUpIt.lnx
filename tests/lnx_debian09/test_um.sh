@@ -4,9 +4,9 @@ set -o errexit
 set -o xtrace
 set -o nounset
 
-source ../libs/commons.sh
-source ../libs/um.sh
-source ../libs/um.sh
+source ../../libs/lnx_debian09/commons.sh
+source ../../libs/lnx_debian09/sm.sh
+source ../../libs/lnx_debian09/sm.sh
 
 function main() {
 declare -r RSRC_DIR_ROLL_UP_IT="$(pwd)/resources"

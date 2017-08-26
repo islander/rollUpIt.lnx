@@ -10,3 +10,4 @@ filetype indent on
 set tabstop=4
 set shiftwidth=4
 set expandtab
+:highlight Constant term=underline ctermfg=2 gui=bold guifg=darkkhaki 

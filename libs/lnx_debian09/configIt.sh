@@ -146,7 +146,7 @@ function configureElasticSearch() {
     declare -r local addr_bind_value=$([ -z "$3" ] && echo "localhost" || echo "$3")
 
     declare -r local log_path="\/var\/log\/elasticsearch"
-    declare -r local data_path="\/var\/data\/elasticsearcha"
+    declare -r local data_path="\/var\/data\/elasticsearch"
 
     setField "$config_path" "cluster.name" "$cluster_name_value" ""
     setField "$config_path" "node.name" "$node01_name_value" ""

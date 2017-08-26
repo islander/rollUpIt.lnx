@@ -4,7 +4,7 @@ set -o errexit
 set -o nounset
 set -o xtrace
 
-source ../libs/net.sh
+source ../../libs/lnx_debian09/net.sh
 
 function main() {
     flushNetwork

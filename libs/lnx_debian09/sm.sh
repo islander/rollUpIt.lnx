@@ -200,3 +200,33 @@ done
 
 apt-get -y dist-upgrade
 }
+# al - locale to activate 
+function setLocale() {
+local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+declare -r local locale_gen_cfg_path="/etc/locale.gen"
+    if [[ ! -e $locale_gen_cfg_path ]]; then
+        printf "$debug_prefix ${RED_ROLLUP_IT} Error: No locale.gen exists ${END_ROLLUP_IT}\n"
+        exit 1;
+    fi
+    if [[ ! -e $locale_to_activate ]]; then
+        printf "$debug_prefix ${RED_ROLLUP_IT} Error: No loale var has been passed ${END_ROLLUP_IT}\n"
+        exit 1;
+    fi
+    if [[ -e stream_error.log ]]; then
+        echo "" > stream_error.log
+    fi
+    
+    sed -i "/0,/#$al.*$/ s/#$al.*$/$al/g" $locale_gen_cfg_path 2>stream_error.log 
+    if [[ -e stream_error.log && -n "$(cat stream_error.log)"]]; then
+        printf "$debug_prefix ${RED_ROLLUP_IT} Error: Can't activate the loale. 
+                Error List: $(cat stream_error.log) ${END_ROLLUP_IT}\n"
+        exit 1
+    fi
+    locale-gen 2>stream_error
+
+    if [[ -e stream_error.log && -n "$(cat stream_error.log)"]]; then
+        printf "$debug_prefix ${RED_ROLLUP_IT} Error: Can't activate the loale. 
+                Error List: $(cat stream_error.log) ${END_ROLLUP_IT}\n"
+        exit 1
+    fi
+}
