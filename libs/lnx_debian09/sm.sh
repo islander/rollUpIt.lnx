@@ -217,14 +217,14 @@ declare -r local locale_gen_cfg_path="/etc/locale.gen"
     fi
     
     sed -i "/0,/#$al.*$/ s/#$al.*$/$al/g" $locale_gen_cfg_path 2>stream_error.log 
-    if [[ -e stream_error.log && -n "$(cat stream_error.log)"]]; then
+    if [[ -e stream_error.log && -n "$(cat stream_error.log)" ]]; then
         printf "$debug_prefix ${RED_ROLLUP_IT} Error: Can't activate the loale. 
                 Error List: $(cat stream_error.log) ${END_ROLLUP_IT}\n"
         exit 1
     fi
     locale-gen 2>stream_error
 
-    if [[ -e stream_error.log && -n "$(cat stream_error.log)"]]; then
+    if [[ -e stream_error.log && -n "$(cat stream_error.log)" ]]; then
         printf "$debug_prefix ${RED_ROLLUP_IT} Error: Can't activate the loale. 
                 Error List: $(cat stream_error.log) ${END_ROLLUP_IT}\n"
         exit 1

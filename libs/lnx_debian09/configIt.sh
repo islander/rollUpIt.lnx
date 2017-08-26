@@ -141,8 +141,8 @@ function configureElasticSearch() {
     fi
     
     declare -r local config_path="/etc/elasticsearch/elasticsearch.yml"
-    declare -r local cluster_name_value=$([ -z "$1" ] && echo "logger" || echo "$1")
-    declare -r local node01_name_value=$([ -z "$2" ] && echo "logger-node01" || echo "$2")
+    declare -r local cluster_name_value=$([ -z "$1" ] && echo "graylog" || echo "$1")
+    declare -r local node01_name_value=$([ -z "$2" ] && echo "graylog-node01" || echo "$2")
     declare -r local addr_bind_value=$([ -z "$3" ] && echo "localhost" || echo "$3")
 
     declare -r local log_path="\/var\/log\/elasticsearch"
@@ -172,17 +172,28 @@ function configureGraylog2() {
         exit 1
     fi
     
+    declare -r local graylog2_defcfg_path="$RSRC_DIR_ROLL_UP_IT/graylog2-server/server.conf.def"
+    declare -r local graylog2_srvconf_dir="/etc/graylog/server"
+    declare -r local graylog2_srvconf_path="$graylog_srv_conf_dir/server.conf"
+    if [[ ! -e $graylog2_defcfg_path ]]; then 
+        printf "$debug_prefix ${RED_ROLLUP_IT} Error: There is no default config graylog2 file ${END_ROLLUP_IT}\n"
+        exit 1
+    else 
+        cp $graylog2_defcfg_path $graylog2_srvconf_dir
+    fi
     installPkg "pwgen" ""
     declare -r local secret_passwd="$(pwgen -N 1 -s 96)"
     declare -r local cyphered_root_passwd="$(echo $passwd | shasum -a 256)"
-    declare -r local graylog_srv_conf_path="/etc/graylog/server/server.conf"
-    # declare -r local graylog_srv_conf_path="$(pwd)/resources/graylog/server/server.conf"
 
-    setField "$graylog_srv_conf_path" "password_secret" "$secret_passwd" " = "
-    setField "$graylog_srv_conf_path" "root_password_sha2" "$cyphered_root_passwd" " = "
-    setField "$graylog_srv_conf_path" "elasticsearch_shards" "1" " = "
-    setField "$graylog_srv_conf_path" "rest_listen_uri" "http:\/\/172.16.102.16:12900" " = "
-    setField "$graylog_srv_conf_path" "web_listen_uri" "http:\/\/172.16.102.16:9000" " = "
+    setField "$graylog2_srvconf_path" "password_secret" "$secret_passwd" " = "
+    setField "$graylog2_srvconf_path" "root_password_sha2" "$cyphered_root_passwd" " = "
+
+    declare -r local node_id_path="/etc/graylog/server/node-id"
+    if [[ÑÑ -e local $node_id_path ]]; then
+        touch $node_id_path
+    fi
+    chown graylog:graylog $node_id_path
+    chmod 770 $node_id_path
 }
 
 function autostartGraylog2() {
