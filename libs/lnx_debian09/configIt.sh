@@ -167,7 +167,9 @@ function configureElasticSearch() {
     # @see http://docs.graylog.org/en/2.2/pages/configuration/elasticsearch.html
     declare -r local total_mem_kb="$(cat /proc/meminfo | awk '/MemTotal/ { print $2}')"
     declare -r local es_heap=$(( total_mem_kb / (1024 * 3) ))
-    export ES_HEAP_SIZE="$es_heap"
+    ES_HEAP_SIZE="$es_heap"
+    export ES_HEAP_SIZE
+    printf "$debug_prefix ${GRN_ROLLUP_IT} ES Heap Size is $ES_HEAP_SIZE ${END_ROLLUP_IT}\n"
 }
 
 function autostartElasticSearch() {
@@ -182,7 +184,7 @@ function configureGraylog2() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0 ] : "
 
     declare -r local passwd="$1"
-    if [[ -z "$1" ]]; then 
+    if [[ -z "$passwd" ]]; then 
         printf "${RED_ROLLUP_IT} $debug_prefix No passwords has been passed ${END_ROLLUP_IT} \n"
         exit 1
     fi
@@ -199,7 +201,7 @@ function configureGraylog2() {
 
     installPkg "pwgen" ""
     declare -r local secret_passwd="$(pwgen -N 1 -s 96)"
-    declare -r local cyphered_root_passwd="$(echo $passwd | shasum -a 256)"
+    declare -r local cyphered_root_passwd="$(echo -n $passwd | sha256sum | sed "s/-//")"
 
     setField "$graylog2_srvconf_path" "password_secret" "$secret_passwd" " = "
     setField "$graylog2_srvconf_path" "root_password_sha2" "$cyphered_root_passwd" " = "
