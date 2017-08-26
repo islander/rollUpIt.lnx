@@ -7,8 +7,9 @@ root_username = admin
 root_password_sha2 = 2634c3097f98e36865f0c572009c4ffd73316bc8b88ccfe8d196af35f46e2394  -
 root_timezone = UTC
 plugin_dir = /usr/share/graylog-server/plugin
-rest_transport_uri = http://0.0.0.0:12900
-rest_listen_uri = http://0.0.0.0:12900
+# the graylog-server communicates with the web-interface through the following address with use of REST API 
+rest_transport_uri = http://172.16.102.15:12900
+rest_listen_uri = http://172.16.102.15:12900
 rest_enable_cors = true
 web_enable=true
 web_listen_uri = http://0.0.0.0:9000
@@ -22,9 +23,11 @@ elasticsearch_index_prefix = graylog
 allow_leading_wildcard_searches = true
 allow_highlighting = false
 elasticsearch_cluster_name = graylog
+# how the graylog-server knows about the elastic search master node
 elasticsearch_discovery_zen_ping_unicast_hosts = 127.0.0.1:9300
 elasticsearch_http_enabled = false
-elasticsearch_network_host = 0.0.00
+# the embedded in graylog-server elasticsearch node to let the graylog-server communicate with elasticsearch nodes
+elasticsearch_network_host = 0.0.0.0
 elasticsearch_discovery_initial_state_timeout = 3s
 elasticsearch_analyzer = standard
 output_batch_size = 500

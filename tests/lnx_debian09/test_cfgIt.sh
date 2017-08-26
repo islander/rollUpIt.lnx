@@ -20,7 +20,7 @@ function main() {
     printf "Entering $debug_prefix\n"
     declare -r local config_path="/etc/elasticsearch/elasticsearch.yml" 
 
-    installGraylog2 
+#    installGraylog2 
     configureElasticSearch "" "" "" 
     autostartElasticSearch 
     configureGraylog2 "12345678"

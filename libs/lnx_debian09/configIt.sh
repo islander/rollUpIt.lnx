@@ -139,8 +139,18 @@ function configureElasticSearch() {
         mkdir -p /var/data/elasticsearch 
         chown -R elasticsearch:elasticsearch /var/data/elasticsearch
     fi
+
+    declare -r local es_defcfg_path="$RSRC_DIR_ROLL_UP_IT/elasticsearch/elasticsearch.yml.def"
+    declare -r local es_srvconf_dir="/etc/elasticsearch"
+    declare -r local es_srvconf_path="$es_srvconf_dir/elasticsearch.yml"
+
+    if [[ ! -e $es_defcfg_path ]]; then 
+        printf "$debug_prefix ${RED_ROLLUP_IT} Error: There is no default config elasticsearch file ${END_ROLLUP_IT} [ $es_defcfg_path ]\n"
+        exit 1
+    else 
+        cp -f "$es_defcfg_path" "$es_srvconf_dir/elasticsearch.yml"
+    fi
     
-    declare -r local config_path="/etc/elasticsearch/elasticsearch.yml"
     declare -r local cluster_name_value=$([ -z "$1" ] && echo "graylog" || echo "$1")
     declare -r local node01_name_value=$([ -z "$2" ] && echo "graylog-node01" || echo "$2")
     declare -r local addr_bind_value=$([ -z "$3" ] && echo "localhost" || echo "$3")
@@ -148,11 +158,16 @@ function configureElasticSearch() {
     declare -r local log_path="\/var\/log\/elasticsearch"
     declare -r local data_path="\/var\/data\/elasticsearch"
 
-    setField "$config_path" "cluster.name" "$cluster_name_value" ""
-    setField "$config_path" "node.name" "$node01_name_value" ""
-    setField "$config_path" "network.host" "$addr_bind_value" ""
-    setField "$config_path" "path.logs" "$log_path" ""
-    setField "$config_path" "path.data" "$data_path" ""
+    setField "$es_srvconf_path" "cluster.name" "$cluster_name_value" ""
+    setField "$es_srvconf_path" "node.name" "$node01_name_value" ""
+    setField "$es_srvconf_path" "network.host" "$addr_bind_value" ""
+    setField "$es_srvconf_path" "path.logs" "$log_path" ""
+    setField "$es_srvconf_path" "path.data" "$data_path" ""
+    # set ES_HEAP_SIZE
+    # @see http://docs.graylog.org/en/2.2/pages/configuration/elasticsearch.html
+    declare -r local total_mem_kb="$(cat /proc/meminfo | awk '/MemTotal/ { print $2}')"
+    declare -r local es_heap=$(( total_mem_kb / (1024 * 3) ))
+    export ES_HEAP_SIZE="$es_heap"
 }
 
 function autostartElasticSearch() {
@@ -174,13 +189,14 @@ function configureGraylog2() {
     
     declare -r local graylog2_defcfg_path="$RSRC_DIR_ROLL_UP_IT/graylog2-server/server.conf.def"
     declare -r local graylog2_srvconf_dir="/etc/graylog/server"
-    declare -r local graylog2_srvconf_path="$graylog_srv_conf_dir/server.conf"
+    declare -r local graylog2_srvconf_path="$graylog2_srvconf_dir/server.conf"
     if [[ ! -e $graylog2_defcfg_path ]]; then 
         printf "$debug_prefix ${RED_ROLLUP_IT} Error: There is no default config graylog2 file ${END_ROLLUP_IT}\n"
         exit 1
     else 
-        cp $graylog2_defcfg_path $graylog2_srvconf_dir
+        cp -f "$graylog2_defcfg_path" "$graylog2_srvconf_dir/server.conf"
     fi
+
     installPkg "pwgen" ""
     declare -r local secret_passwd="$(pwgen -N 1 -s 96)"
     declare -r local cyphered_root_passwd="$(echo $passwd | shasum -a 256)"
