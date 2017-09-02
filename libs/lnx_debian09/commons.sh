@@ -95,7 +95,7 @@ if [[ -v $2 && -n "$2" ]]; then
 	fi
 fi
 
-if [[ "$2" == "q" ]]; then	
+if [[ "$3" == "q" ]]; then	
 	apt-get -y update
 else
 	apt-get update
@@ -113,7 +113,7 @@ fi
 if [[ "$res" == "false" ]]; then	
 	printf "$debug_prefix [ $1 ] will be installed\n"
 
-	if [[ "$2" == "q" ]]; then 	
+	if [[ "$3" == "q" ]]; then 	
 		apt-get -y install $1 2>stream_error.log
 	else
 		apt-get install $1 2>stream_error.log
@@ -133,7 +133,7 @@ else
     printf "$debug_prefix Package [$1] is installed\n"
 fi
 
-if [[ "$2" == "q" ]]; then 	
+if [[ "$3" == "q" ]]; then 	
     apt-get -y update
 else
 	apt-get update
@@ -168,3 +168,42 @@ function setField() {
     sed -i "0,/.*$sf.*$/ s/.*$sf.*$/$replace_str/" $pf
 }
 
+function removePkg() {
+local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+if [[ -z $1 ]]; then
+	printf "${RED_ROLLUP_IT} $debug_prefix Error: Package name has not been passed ${END_ROLLUP_IT} \n"
+	exit 1;
+fi
+
+if [[ "$2" == "q" ]]; then	
+	apt-get -y update
+else
+	apt-get update
+fi
+
+res=""
+local errs=""
+isPkgInstalled $1 res
+echo "isPkgInstalled res [ $res ]"
+
+if [[ -e stream_error.log ]]; then
+    echo "" > stream_error.log
+fi
+
+if [[ "$res" == "true" ]]; then
+    sudo apt-get purge "$1" 2>stream_error.log
+    errs="$(cat stream_error.log)"
+    if [[ -n "$errs" ]]; then
+        printf "$debug_prefix ${RED_ROLLUP_IT} Can't remove pkg [ $1 ]. \n Error: $errs ${END_ROLLUP_IT}\n"
+        exit 1
+    fi
+
+    sudo apt-get autoremove && sudo apt-get autoclean 2>stream_errors.log
+    if [[ -n "$errs" ]]; then
+        printf "$debug_prefix ${RED_ROLLUP_IT} Can't make autoremove and autoclean \n Error: $errs ${END_ROLLUP_IT}\n"
+        exit 1
+    fi
+else
+    printf "$debug_prefix ${RED_ROLLUP_IT} pkg [ $1 ] is not installed. Can't remove it ${END_ROLLUP_IT}"
+fi
+}

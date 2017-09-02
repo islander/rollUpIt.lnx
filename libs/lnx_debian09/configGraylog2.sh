@@ -11,7 +11,7 @@ set -o nounset
 function preJavaInstallation() {
 	local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 
-	installPkg "dirmngr" ""
+	installPkg "dirmngr" "" "" ""
 
     if [[ -e stream_error.log ]]; then
         echo "" > stream_error.log
@@ -38,7 +38,7 @@ local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 printf "Entering $debug_prefix\n"
 
 preJavaInstallation
-installPkg "oracle-java8-installer" "" 
+installPkg "oracle-java8-installer" "" "" 
 }
 
 function preMongoDBInstallation() {
@@ -67,7 +67,7 @@ local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 printf "Entering $debug_prefix\n"
 
 # preMongoDBInstallation
-installPkg "mongodb-server" ""
+installPkg "mongodb-server" "" ""
 }
 
 function preElasticSearchInstallation() {
@@ -89,7 +89,8 @@ function installElasticSearch() {
     printf "Entering $debug_prefix\n"
     
     preElasticSearchInstallation
-    installPkg "elasticsearch" ""
+    installPkg "elasticsearch" "" ""
+
 }
 
 function preGraylog2Installation() {
@@ -119,10 +120,10 @@ function installGraylog2() {
         #exit 1
     fi
 
-    installPkg "apt-transport-https" ""
-    wget https://packages.graylog2.org/repo/packages/graylog-2.0-repository_latest.deb
-    dpkg -i graylog-2.0-repository_latest.deb
-    installPkg "graylog-server" ""
+    installPkg "apt-transport-https" "" ""
+    wget https://packages.graylog2.org/repo/packages/graylog-2.3-repository_latest.deb
+    dpkg -i graylog-2.3-repository_latest.deb
+    installPkg "graylog-server" "" ""
     rm -f /etc/init/graylog-server.override
 }
 
@@ -166,10 +167,74 @@ function configureElasticSearch() {
     # set ES_HEAP_SIZE
     # @see http://docs.graylog.org/en/2.2/pages/configuration/elasticsearch.html
     declare -r local total_mem_kb="$(cat /proc/meminfo | awk '/MemTotal/ { print $2}')"
-    declare -r local es_heap=$(( total_mem_kb / (1024 * 3) ))
+    declare -r local es_heap=$(( total_mem_kb / (1024 * 2) ))
     ES_HEAP_SIZE="$es_heap"
-    export ES_HEAP_SIZE
+    sh -c "echo "ES_HEAP_SIZE=$ES_HEAP_SIZE" >> /etc/environment"
     printf "$debug_prefix ${GRN_ROLLUP_IT} ES Heap Size is $ES_HEAP_SIZE ${END_ROLLUP_IT}\n"
+}
+
+function fixGraylogMapping() {
+    if [[ -e stream_error.log ]]; then
+        sh -c "echo "" > stream_error.log"
+    fi
+
+    local isESActive="$(systemctl status elasticsearch | grep 'Active: active (running)' 2>stream_error.log)"
+    local errs="$(cat stream_error.log)"
+    
+    if [[ -n "$errs" ]]; then
+        printf "$debug_prefix ${RED_ROLLUP_IT} Error: Can't resolve status of elasticsearch.\n Error Text: [ $errs ]${END_ROLLUP_IT}\n"
+        exit 1
+    fi
+   if [[ -n "$isESActive" ]]; then
+        curl -XDELETE 'localhost:9200/graylog_0/'
+        curl -XPUT 'localhost:9200/graylog_0' -d \
+        '{
+            "settings" : {
+                    "number_of_shards" : 1,
+                    "number_of_replicas" : 0
+                    },
+
+            "mappings" : {
+              "message" : {
+                "properties" : {
+                  "facility" : {
+                    "type" : "string"
+                  },
+                  "gl2_remote_ip" : {
+                    "type" : "string"
+                  },
+                  "gl2_remote_port" : {
+                    "type" : "long"
+                  },
+                  "gl2_source_input" : {
+                    "type" : "string"
+                  },
+                  "gl2_source_node" : {
+                    "type" : "string"
+                  },
+                  "level" : {
+                    "type" : "long"
+                  },
+                  "message" : {
+                    "type" : "string"
+                  },
+                  "source" : {
+                    "type" : "string"
+                  },
+                  "streams" : {
+                    "type" : "string"
+                  },
+                  "timestamp" : {
+                    "type" : "date",
+                    "format": "yyyy-MM-dd HH:mm:ss.SSS"
+                  }
+                }
+              }
+            }
+          }'
+   else 
+       printf "$debug_prefix Start elasticsearch and try again \n"
+   fi
 }
 
 function autostartElasticSearch() {
@@ -199,7 +264,7 @@ function configureGraylog2() {
         cp -f "$graylog2_defcfg_path" "$graylog2_srvconf_dir/server.conf"
     fi
 
-    installPkg "pwgen" ""
+    installPkg "pwgen" "" ""
     declare -r local secret_passwd="$(pwgen -N 1 -s 96)"
     declare -r local cyphered_root_passwd="$(echo -n $passwd | sha256sum | sed "s/-//")"
 
@@ -207,7 +272,7 @@ function configureGraylog2() {
     setField "$graylog2_srvconf_path" "root_password_sha2" "$cyphered_root_passwd" " = "
 
     declare -r local node_id_path="/etc/graylog/server/node-id"
-    if [[ÑÑ -e local $node_id_path ]]; then
+    if [[ ! -e "$node_id_path" ]]; then
         touch $node_id_path
     fi
     chown graylog:graylog $node_id_path
@@ -221,3 +286,25 @@ function autostartGraylog2() {
     systemctl enable graylog-server
     systemctl start graylog-server
 }
+
+function postClean() {
+    # clean after installing 
+    # find . -mindepth 1 -maxdepth 1 \( -iname "*deb" -o -iname "*log" \) | xargs rm -f  
+    find . -mindepth 1 -maxdepth 1 -iname "*deb" | xargs rm -f  
+}
+
+function removeGraylog2() {
+    systemctl stop graylog-server || true
+    systemctl disable graylog-server || true
+
+    systemctl stop elasticsearch || true
+    systemctl disable elasticsearch || true
+
+    systemctl stop mogodb || true
+    systemctl disable mogodb || true
+    
+    removePkg "graylog-server" "" ""
+    removePkg "elasticsearch" "" ""
+    removePkg "mongodb-server" "" ""
+}
+

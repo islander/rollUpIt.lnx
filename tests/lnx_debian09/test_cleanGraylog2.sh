@@ -11,20 +11,21 @@ source ../../libs/addColors.sh
 source ../../libs/addVars.sh
 source ../../libs/lnx_debian09/commons.sh
 source ../../libs/lnx_debian09/sm.sh
-source ../../libs/lnx_debian09/configIt.sh
+source ../../libs/lnx_debian09/configGraylog2.sh
 
 # 1
 # test configIt:Configuring Graylogs2
 function main() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     printf "Entering $debug_prefix\n"
-    declare -r local config_path="/etc/elasticsearch/elasticsearch.yml" 
 
+    removeGraylog2 || true
+    postClean
 #    installGraylog2 
-    configureElasticSearch "" "" "" 
-    autostartElasticSearch 
-    configureGraylog2 "12345678"
-    autostartGraylog2    
+#    configureElasticSearch "" "" "" 
+#    autostartElasticSearch 
+#    configureGraylog2 "12345678"
+#    autostartGraylog2    
 #    local res=""
 #    local ii_status="Status: install ok installed"
 #    res="$(dpkg-query -s $1 2>stream_errs.log | grep "$ii_status" || cat stream_errs.log)"
