@@ -102,11 +102,21 @@ function saveIPTRules() {
 }
 
 function portForwarding() {
+    local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+    printf "$debug_prefix enter the function \n"
+    
     declare -r local wan_nic="$1"
     declare -r local wan_ip="$2"
     declare -r local src_port="$3"
     declare -r local dst_ip="$4"
     declare -r local dst_port="$5"
 
+    printf "$debug_prefix ${GRN_ROLLUP_IT} WAN NIC: [$wan_nic]${END_ROLLUP_IT}\n"
+    printf "$debug_prefix ${GRN_ROLLUP_IT} WAN IP: [$wan_ip]${END_ROLLUP_IT}\n"
+    printf "$debug_prefix ${GRN_ROLLUP_IT} WAN SRC_PORT: [$src_port]${END_ROLLUP_IT}\n"
+    printf "$debug_prefix ${GRN_ROLLUP_IT} WAN DST IP: [$dst_ip]${END_ROLLUP_IT}\n"
+    printf "$debug_prefix ${GRN_ROLLUP_IT} WAN DST PORT: [$dst_port]${END_ROLLUP_IT}\n"
+
     iptables -t nat -A PREROUTING -i "$wan_nic" -p tcp --dport "$src_port" -j  DNAT --to-destination "$dst_ip":"$dst_port"
+    iptables -A FORWARD -i "$wan_nic" -d "$dst_ip" -p tcp --dport "$dst_port" -j ACCEPT
 }
