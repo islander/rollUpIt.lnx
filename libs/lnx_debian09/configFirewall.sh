@@ -4,9 +4,9 @@ PATH=/usr/sbin:/sbin:/bin:/usr/bin
 
 ############################################
 ### Configuring Iptables Basic Rules #######
-###########################################
+############################################
 
-# set -o errexit
+ set -o errexit
 # To be failed when it tries to use undeclare variables
 set -o nounset
 
@@ -38,6 +38,13 @@ function updateIPTRules() {
     declare -r local lan_ip="$6"
     declare -r local trusted_lan="192.168.0.0/24"
 
+    clearIPTState
+    
+    ipset -N OUTPUT_TCP_FWPORTS bitmap:port range 1-65535
+    ipset -N OUTPUT_UDP_FWPORTS bitmap:port range 1-65535
+    ipset -N OUTPUT_TCP_LANPORTS bitmap:port range 1-65535
+    ipset -N OUTPUT_UDP_LANPORTS bitmap:port range 1-65535
+
     # FTP
     declare -r local ftp_data_port="20"
     declare -r local ftp_cmd_port="21"
@@ -47,22 +54,40 @@ function updateIPTRules() {
     declare -r local smtp_port="25"
     # Secured SMTP
     declare -r local ssmtp_port="465"
-
+    ipset -A OUTPUT_TCP_FWPORTS "$smtp_port"
+    ipset -A OUTPUT_TCP_LANPORTS "$smtp_port"
+    ipset -A OUTPUT_TCP_FWPORTS "$ssmtp_port"
+    ipset -A OUTPUT_TCP_LANPORTS "$ssmtp_port"
+    
     # POP3
     declare -r local pop3_port="110"
+    ipset -A OUTPUT_TCP_FWPORTS "$pop3_port"
+    ipset -A OUTPUT_TCP_LANPORTS "$pop3_port"
     # Secured POP3
     declare -r local spop3_port="995"
+    ipset -A OUTPUT_TCP_FWPORTS "$spop3_port"
+    ipset -A OUTPUT_TCP_LANPORTS "$spop3_port"
     # IMAP
     declare -r local imap_port="143"
+    ipset -A OUTPUT_TCP_FWPORTS "$imap_port"
+    ipset -A OUTPUT_TCP_LANPORTS "$imap_port"
     # Secured IMAP
     declare -r local simap_port="993"
+    ipset -A OUTPUT_TCP_FWPORTS "$simap_port"
+    ipset -A OUTPUT_TCP_LANPORTS "$simap_port"
     
     # ------- HTTP/S PORTS ------------ 
     declare -r local http_port="80"
+    ipset -A OUTPUT_TCP_FWPORTS "$http_port"
+    ipset -A OUTPUT_TCP_LANPORTS "$http_port"
     declare -r local https_port="443"
+    ipset -A OUTPUT_TCP_FWPORTS "$https_port"
+    ipset -A OUTPUT_TCP_LANPORTS "$https_port"
 
     # ------- Kerberous Port ----------
     declare -r local kerb_port="88"
+    ipset -A OUTPUT_TCP_FWPORTS "$kerb_port"
+    ipset -A OUTPUT_TCP_LANPORTS "$kerb_port"
 
     # ------- DHCP Ports:udp ----------
     declare -r local dhcp_srv_port="67"
@@ -70,9 +95,18 @@ function updateIPTRules() {
 
     # ------- DNS port:udp/tcp ------------
     declare -r local dns_port="53"
+    # open dns    
+    ipset -A OUTPUT_TCP_FWPORTS "$dns_port"
+    ipset -A OUTPUT_UDP_FWPORTS "$dns_port"
+    ipset -A OUTPUT_TCP_LANPORTS "$dns_port"
+    ipset -A OUTPUT_UDP_LANPORTS "$dns_port"
 
     # ------- SNMP ports:udp/tcp ------------
     declare -r local snmp_agent_port="161"
+    ipset -A OUTPUT_TCP_FWPORTS "$snmp_agent_port"
+    ipset -A OUTPUT_UDP_FWPORTS "$snmp_agent_port"
+    ipset -A OUTPUT_TCP_LANPORTS "$snmp_agent_port"
+    ipset -A OUTPUT_UDP_LANPORTS "$snmp_agent_port"
     declare -r local snmp_mng_port="162"
 
     # ------- LDAP ports ----------------
@@ -85,11 +119,13 @@ function updateIPTRules() {
 
     # ------- RDP ports ------------
     declare -r local rdp_port="3389"
+    ipset -A OUTPUT_TCP_LANPORTS "$rdp_port"
+    ipset -A OUTPUT_UDP_LANPORTS "$rdp_port"
     
     # ------- SSH ports ------------
     declare -r local ssh_port="22"
-
-    clearIPTState
+    ipset -A OUTPUT_TCP_FWPORTS "$ssh_port"
+   
     protectAgainstAttacks
 
     # Always accept loopback traffic
@@ -107,8 +143,14 @@ function updateIPTRules() {
     iptables -A INPUT -p icmp --icmp-type echo-request -j PING_OF_DEATH
 
     # all established/related connections from the local system (the router's os) are permited
-    iptables -A OUTPUT -m state --state ESTABLISHED,RELATED,NEW -j ACCEPT
-    
+    iptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+    openOutputPorts
+    openOutputForwardPorts
+
+    iptables -A OUTPUT -p icmp --icmp-type echo-request -m state --state NEW -j ACCEPT
+    iptables -A OUTPUT -p icmp --icmp-type echo-reply -m state --state NEW -j ACCEPT
+
     # enable incoming ssh
     iptables -A INPUT -i "$wan_nic" -s "$trusted_lan" -p tcp --dport "$ssh_port" -m conntrack --ctstate NEW -j ACCEPT
 
@@ -152,6 +194,7 @@ function protectAgainstAttacks() {
     iptables -A INPUT -p tcp -j PORTSCAN
     iptables -A INPUT -f -j DROP
     iptables -A INPUT -p tcp ! --syn -m state --state NEW -j DROP
+    iptables -A FORWARD -p tcp ! --syn -m state --state NEW -j DROP 
 }
 
 function saveIPTRules() {
@@ -178,31 +221,19 @@ function clearIPTState() {
     iptables -t raw -F
     iptables -X
     iptables -Z
-
+ 
     ipset flush
-#    destroySet "OUT_TCP_PORTS"
-#    destroySet "OUT_UDP_PORTS"
+    ipset destroy
 }
 
-function destroySet() {
-    if [[ -z "$1" ]]; then
-        printf "$debug_prefix ${RED_ROLLUP_IT} Error: Empty parameters ${END_ROLLUP_IT}"
-        exit 1
-    fi
+function openOutputPorts() {
+    iptables -A OUTPUT -p tcp -m set --match-set OUTPUT_TCP_FWPORTS dst -m state --state NEW -j ACCEPT
+    iptables -A OUTPUT -p udp -m set --match-set OUTPUT_UDP_FWPORTS dst -m state --state NEW -j ACCEPT
+}
 
-    if [[ -e stream_error.log ]]; then
-        echo "" > stream_error.log
-    fi
-
-    local errs=""
-    declare -r local destroy_set="$1"
-    ipset -L "$destroy_set" 2>stream_error.log
-    if [[ -e stream_error.log ]]; then
-        errs="$(cat stream_error.log)"
-        printf "$debug_prefix OUT_TCP_PORTS could not been destroyed: no such set. Error: $errs\n"
-    else
-        ipset destroy "$destroy_set"
-    fi
+function openOutputForwardPorts() {
+    iptables -A FORWARD -p tcp -m set --match-set OUTPUT_TCP_LANPORTS dst -m state --state NEW -j ACCEPT
+    iptables -A FORWARD -p udp -m set --match-set OUTPUT_UDP_LANPORTS dst -m state --state NEW -j ACCEPT
 }
 
 function portForwarding() {
