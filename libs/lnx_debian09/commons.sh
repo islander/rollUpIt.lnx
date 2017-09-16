@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -o errexit
+# set -o errexit
 # To be failed when it tries to use undeclare variables
 set -o nounset
 
