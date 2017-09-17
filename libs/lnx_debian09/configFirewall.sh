@@ -6,10 +6,14 @@ PATH=/usr/sbin:/sbin:/bin:/usr/bin
 ### Configuring Iptables Basic Rules #######
 ############################################
 
- set -o errexit
+set -o errexit
 # To be failed when it tries to use undeclare variables
 set -o nounset
 
+function installIPT() {
+    installPkg "ipset" "" "" ""
+    installPkg "iptables-persistent" "" "" ""
+}
 
 function configIPTRules() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
