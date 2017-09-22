@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# set -o errexit
+set -o errexit
 set -o nounset
 set -o xtrace
 
@@ -16,15 +16,35 @@ source ../../libs/lnx_debian09/configFirewall.sh
 # 1
 # test ConfigIt: Iptables
 function main() {
-    local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
-    printf "Entering $debug_prefix\n"
+    local debug_prefix="debug: [$0] [ $FUNCNAME[0] ]: "
+    printf "$debug_prefix enter the function\n"
+    printf "$debug_prefix Argument List: $#\n"
 
-    installIPT
-    configIPTRules "eth1" "eth0" \
-        "172.16.102.0/24" "172.16.102.11" \
-        "10.10.0.0/24" "10.10.0.1" \
-        "2211" "10.10.0.21" "22"
+    if [[ $# -eq 0 ]]; then
+        printf "$debug_prefix Start configuring the firewall...\n"
+
+                installFw
+
+                configFwRules "eth1" "172.16.102.0/24" "172.16.102.11" ""       
+                addFwLAN "eth0" "10.10.0.0/24" "10.10.0.1" "" "" ""
+
+                saveFwState
+
+        printf "$debug_prefix ...End configuring the firewall\n"
+   else
+        case $1 in 
+            undo)
+                printf "$debug_prefix The first argument is $1\n"
+                clearFwState
+            ;;
+
+            *)
+              printf "$debug_prefix Invalid arguments!!!\n"
+            ;;
+
+        esac 
+    fi
 }
 
-main 
+main $@
 

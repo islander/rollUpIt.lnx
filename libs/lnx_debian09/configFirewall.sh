@@ -10,211 +10,146 @@ set -o errexit
 # To be failed when it tries to use undeclare variables
 set -o nounset
 
-function installIPT() {
+function installFw() {
     installPkg "ipset" "" "" ""
     installPkg "iptables-persistent" "" "" ""
 }
 
-function configIPTRules() {
+function testIpset() {
+    declare -rg FTP_DATA_PORT_RUI="20"
+    declare -rg FTP_CMD_PORT_RUI="21"
+    ipset create OUT_TCP_FW_PORTS bitmap:port range 1-4000
+    ipset add OU_TCP_FWPORTS "$FTP_DATA_PORT_RUI"
+    ipset add OU_TCP_FWPORTS "$FTP_CMD_PORT_RUI"
+}
+
+function configFwRules() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     printf "$debug_prefix enter the function \n"
     
-    if [[ -z "$1" || -z "$2" || -z "$3" || -z "$4" || -z "$5" || -z "$6" ]]; then
+    if [[ -z "$1" || -z "$2" || -z "$3" ]]; then
         printf "$debug_prefix ${RED_ROLLUP_IT} Error: Empty parameters ${END_ROLLUP_IT}"
         exit 1
     fi     
     
-    updateIPTRules $1 $2 $3 $4 $5 $6 $7 $8 $9
+    clearFwState    
+    defineFwConstants "$1" "$2" "$3" ""
+    setCommonFwRules 
 
-    saveIPTRules
 }
 
 #
-# arg0 - wan NIC
-# arg1 - lan NIC
+# arg0 - wlan nic
+# arg1 - wlan ip
 #
-function updateIPTRules() {
-    declare -r local wan_nic="$1" 
-    declare -r local lan_nic="$2"
-    declare -r local wan="$3"
-    declare -r local wan_ip="$4"
-    declare -r local lan="$5"
-    declare -r local lan_ip="$6"
-    declare -r local trusted_lan="192.168.0.0/24"
-
-    clearIPTState
+function defineFwConstants() {
+    local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+    printf "$debug_prefix enter the function \n"
     
-    ipset -N OUTPUT_TCP_FWPORTS bitmap:port range 1-65535
-    ipset -N OUTPUT_UDP_FWPORTS bitmap:port range 1-65535
-    ipset -N OUTPUT_TCP_LANPORTS bitmap:port range 1-65535
-    ipset -N OUTPUT_UDP_LANPORTS bitmap:port range 1-65535
+    if [[ -z "$1" || -z "$2" || -z "$3" ]]; then
+        printf "$debug_prefix ${RED_ROLLUP_IT} Error: Empty parameters ${END_ROLLUP_IT}"
+        exit 1
+    fi    
+
+    # -rg - global readonly
+    declare -rg WAN_NIC_RUI="$1"
+    declare -rg WAN_ADDR_RUI="$2"
+    declare -rg WAN_GW_RUI="$3"
+    declare -rg TRUSTED_WAN_ADDR_RUI=$([ -z "$4"] && echo "192.168.0.0/24" || echo "$4")
+
+    ipset create OUT_TCP_FW_PORTS bitmap:port range 1-4000
+    ipset create OUT_UDP_FW_PORTS bitmap:port range 1-4000
+    ipset create IN_UDP_FW_PORTS bitmap:port range 1-4000
+    ipset create IN_TCP_FW_PORTS bitmap:port range 1-4000
+    ipset create OUT_TCP_FWR_PORTS bitmap:port range 1-4000
+    ipset create OUT_UDP_FWR_PORTS bitmap:port range 1-4000
+    ipset create IN_TCP_FWR_PORTS bitmap:port range 1-4000
+    ipset create IN_UDP_FWR_PORTS bitmap:port range 1-4000
 
     # FTP
-    declare -r local ftp_data_port="20"
-    declare -r local ftp_cmd_port="21"
+    declare -rg FTP_DATA_PORT_RUI="20"
+    declare -rg FTP_CMD_PORT_RUI="21"
 
     # ------- MAIL PORTS ------------ 
     # SMTP
-    declare -r local smtp_port="25"
+    declare -rg SMTP_PORT_RUI="25"
     # Secured SMTP
-    declare -r local ssmtp_port="465"
-    ipset -A OUTPUT_TCP_FWPORTS "$smtp_port"
-    ipset -A OUTPUT_TCP_LANPORTS "$smtp_port"
-    ipset -A OUTPUT_TCP_FWPORTS "$ssmtp_port"
-    ipset -A OUTPUT_TCP_LANPORTS "$ssmtp_port"
-    
+    declare -rg SSMTP_PORT_RUI="465"
+    ipset add OUT_TCP_FW_PORTS $SMTP_PORT_RUI
+    ipset add OUT_TCP_FWR_PORTS "$SMTP_PORT_RUI"
+    ipset add OUT_TCP_FW_PORTS "$SSMTP_PORT_RUI"
+    ipset add OUT_TCP_FWR_PORTS "$SSMTP_PORT_RUI"
+   
     # POP3
-    declare -r local pop3_port="110"
-    ipset -A OUTPUT_TCP_FWPORTS "$pop3_port"
-    ipset -A OUTPUT_TCP_LANPORTS "$pop3_port"
+    declare -rg POP3_PORT_RUI="110"
+    ipset add OUT_TCP_FW_PORTS "$POP3_PORT_RUI"
+    ipset add OUT_TCP_FWR_PORTS "$POP3_PORT_RUI"
     # Secured POP3
-    declare -r local spop3_port="995"
-    ipset -A OUTPUT_TCP_FWPORTS "$spop3_port"
-    ipset -A OUTPUT_TCP_LANPORTS "$spop3_port"
+    declare -rg SPOP3_PORT_RUI="995"
+    ipset add OUT_TCP_FW_PORTS "$SPOP3_PORT_RUI"
+    ipset add OUT_TCP_FWR_PORTS "$SPOP3_PORT_RUI"
     # IMAP
-    declare -r local imap_port="143"
-    ipset -A OUTPUT_TCP_FWPORTS "$imap_port"
-    ipset -A OUTPUT_TCP_LANPORTS "$imap_port"
+    declare -rg IMAP_PORT_RUI="143"
+    ipset add OUT_TCP_FW_PORTS "$IMAP_PORT_RUI"
+    ipset add OUT_TCP_FWR_PORTS "$IMAP_PORT_RUI"
     # Secured IMAP
-    declare -r local simap_port="993"
-    ipset -A OUTPUT_TCP_FWPORTS "$simap_port"
-    ipset -A OUTPUT_TCP_LANPORTS "$simap_port"
+    declare -rg SIMAP_PORT_RUI="993"
+    ipset add OUT_TCP_FW_PORTS "$SIMAP_PORT_RUI"
+    ipset add OUT_TCP_FWR_PORTS "$SIMAP_PORT_RUI"
     
     # ------- HTTP/S PORTS ------------ 
-    declare -r local http_port="80"
-    ipset -A OUTPUT_TCP_FWPORTS "$http_port"
-    ipset -A OUTPUT_TCP_LANPORTS "$http_port"
-    declare -r local https_port="443"
-    ipset -A OUTPUT_TCP_FWPORTS "$https_port"
-    ipset -A OUTPUT_TCP_LANPORTS "$https_port"
+    declare -rg HTTP_PORT_RUI="80"
+    ipset add OUT_TCP_FW_PORTS "$HTTP_PORT_RUI"
+    ipset add OUT_TCP_FWR_PORTS "$HTTP_PORT_RUI"
+    declare -rg HTTPS_PORT_RUI="443"
+    ipset add OUT_TCP_FW_PORTS "$HTTPS_PORT_RUI"
+    ipset add OUT_TCP_FWR_PORTS "$HTTPS_PORT_RUI"
 
     # ------- Kerberous Port ----------
-    declare -r local kerb_port="88"
-    ipset -A OUTPUT_TCP_FWPORTS "$kerb_port"
-    ipset -A OUTPUT_TCP_LANPORTS "$kerb_port"
+    declare -rg KERB_PORT_RUI="88"
+    ipset add OUT_TCP_FW_PORTS "$KERB_PORT_RUI"
+    ipset add OUT_TCP_FWR_PORTS "$KERB_PORT_RUI"
 
     # ------- DHCP Ports:udp ----------
-    declare -r local dhcp_srv_port="67"
-    declare -r local dhcp_client_port="68"
+    declare -rg DHCP_SRV_PORT_RUI="67"
+    declare -rg DHCP_CLIENT_PORT_RUI="68"
 
     # ------- DNS port:udp/tcp ------------
-    declare -r local dns_port="53"
+    declare -rg DNS_PORT_RUI="53"
     # open dns    
-    ipset -A OUTPUT_TCP_FWPORTS "$dns_port"
-    ipset -A OUTPUT_UDP_FWPORTS "$dns_port"
-    ipset -A OUTPUT_TCP_LANPORTS "$dns_port"
-    ipset -A OUTPUT_UDP_LANPORTS "$dns_port"
+    ipset add OUT_TCP_FW_PORTS "$DNS_PORT_RUI"
+    ipset add OUT_UDP_FW_PORTS "$DNS_PORT_RUI"
+    ipset add OUT_TCP_FWR_PORTS "$DNS_PORT_RUI"
+    ipset add OUT_UDP_FWR_PORTS "$DNS_PORT_RUI"
 
     # ------- SNMP ports:udp/tcp ------------
-    declare -r local snmp_agent_port="161"
-    ipset -A OUTPUT_TCP_FWPORTS "$snmp_agent_port"
-    ipset -A OUTPUT_UDP_FWPORTS "$snmp_agent_port"
-    ipset -A OUTPUT_TCP_LANPORTS "$snmp_agent_port"
-    ipset -A OUTPUT_UDP_LANPORTS "$snmp_agent_port"
-    declare -r local snmp_mng_port="162"
+    declare -rg SNMP_AGENT_PORT_RUI="161"
+    ipset add OUT_TCP_FW_PORTS "$SNMP_AGENT_PORT_RUI"
+    ipset add OUT_UDP_FW_PORTS "$SNMP_AGENT_PORT_RUI"
+    ipset add OUT_TCP_FWR_PORTS "$SNMP_AGENT_PORT_RUI"
+    ipset add OUT_UDP_FWR_PORTS "$SNMP_AGENT_PORT_RUI"
+    declare -rg SNMP_MGMT_PORT_RUI="162"
 
     # ------- LDAP ports ----------------
-    declare -r local ldap_port="389"
-    declare -r local sldap_port="636"
+    declare -rg LDAP_PORT_RUI="389"
+    declare -rg SLDAP_PORT_RUI="636"
 
     # ------- OpenVPN ports ------------
-    declare -r local uovpn_port="1194" # udp
-    declare -r local tovpn_port="443" # tcp
+    declare -rg UOVPN_PORT_RUI="1194" # udp
+    declare -rg TOVPN_PORT_RUI="443" # tcp
 
     # ------- RDP ports ------------
-    declare -r local rdp_port="3389"
-    ipset -A OUTPUT_TCP_LANPORTS "$rdp_port"
-    ipset -A OUTPUT_UDP_LANPORTS "$rdp_port"
+    declare -rg RDP_PORT_RUI="3389"
+    ipset add OUT_TCP_FWR_PORTS "$RDP_PORT_RUI"
+    ipset add OUT_UDP_FWR_PORTS "$RDP_PORT_RUI"
     
     # ------- SSH ports ------------
-    declare -r local ssh_port="22"
-    ipset -A OUTPUT_TCP_FWPORTS "$ssh_port"
-   
-    protectAgainstAttacks
-
-    # Always accept loopback traffic
-    iptables -A INPUT -i lo -j ACCEPT
-
-    # Allow established connections, and those not coming from the outside
-    iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-
-    # ------ ICMP rules -----------------------------------------------------
-    iptables -A INPUT -p icmp --icmp-type 8 -s 0/0 -d $wan_ip -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
-    # protects from PING of death
-    iptables -N PING_OF_DEATH
-    iptables -A PING_OF_DEATH -p icmp --icmp-type echo-request -m hashlimit --hashlimit 1/s --hashlimit-burst 10 --hashlimit-htable-expire 300000 --hashlimit-mode srcip --hashlimit-name t_PING_OF_DEATH -j RETURN
-    iptables -A PING_OF_DEATH -j DROP
-    iptables -A INPUT -p icmp --icmp-type echo-request -j PING_OF_DEATH
-
-    # all established/related connections from the local system (the router's os) are permited
-    iptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-
-    openOutputPorts
-    openOutputForwardPorts
-
-    iptables -A OUTPUT -p icmp --icmp-type echo-request -m state --state NEW -j ACCEPT
-    iptables -A OUTPUT -p icmp --icmp-type echo-reply -m state --state NEW -j ACCEPT
-
-    # enable incoming ssh
-    iptables -A INPUT -i "$wan_nic" -s "$trusted_lan" -p tcp --dport "$ssh_port" -m conntrack --ctstate NEW -j ACCEPT
-
-    # additional non standard rules
-    if [[ -n "$4" && -n "$7" && -n "$8" && -n "$9" ]]; then 
-        portForwarding "$1" "$4" "$7" "$8" "$9"
-    fi
-
-    iptables -A INPUT -m state --state NEW -i "$wan_nic" -j DROP
-    iptables -A FORWARD -m state --state NEW -i "$wan_nic" -o "$lan_nic" -j DROP
-    iptables -A FORWARD -i "$wan_nic" -o "$lan_nic" -m state --state ESTABLISHED,RELATED -j ACCEPT
-    
-    # Allow outgoing connections from the LAN side.
-    iptables -A FORWARD -i "$lan_nic" -o "$wan_nic" -m state --state NEW -j ACCEPT
-
-    # Masquerade.
-    iptables -t nat -A POSTROUTING -o "$wan_nic" -j MASQUERADE
- 
-    # default policies for filter tables 
-    iptables -P INPUT DROP
-    iptables -P FORWARD DROP
-    iptables -P OUTPUT DROP
-
-    # Enable routing.
-    echo 1 > /proc/sys/net/ipv4/ip_forward
+    declare -rg SSH_PORT_RUI="22"
+    ipset add OUT_TCP_FW_PORTS "$SSH_PORT_RUI"
+#    ipset add IN_TCP_FW_PORTS "$SSH_PORT_RUI"
 }
 
-function protectAgainstAttacks() {
-    iptables -N PORTSCAN
-    iptables -A PORTSCAN -p tcp --tcp-flags ACK,FIN FIN -j DROP
-    iptables -A PORTSCAN -p tcp --tcp-flags ACK,PSH PSH -j DROP
-    iptables -A PORTSCAN -p tcp --tcp-flags ACK,URG URG -j DROP
-    iptables -A PORTSCAN -p tcp --tcp-flags FIN,RST FIN,RST -j DROP
-    iptables -A PORTSCAN -p tcp --tcp-flags SYN,FIN SYN,FIN -j DROP
-    iptables -A PORTSCAN -p tcp --tcp-flags SYN,RST SYN,RST -j DROP
-    iptables -A PORTSCAN -p tcp --tcp-flags ALL ALL -j DROP
-    iptables -A PORTSCAN -p tcp --tcp-flags ALL NONE -j DROP
-    iptables -A PORTSCAN -p tcp --tcp-flags ALL FIN,PSH,URG -j DROP
-    iptables -A PORTSCAN -p tcp --tcp-flags ALL SYN,FIN,PSH,URG -j DROP
-    iptables -A PORTSCAN -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -j DROP
-    iptables -A INPUT -p tcp -j PORTSCAN
-    iptables -A INPUT -f -j DROP
-    iptables -A INPUT -p tcp ! --syn -m state --state NEW -j DROP
-    iptables -A FORWARD -p tcp ! --syn -m state --state NEW -j DROP 
-}
-
-function saveIPTRules() {
-    local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
-    printf "$debug_prefix enter the function \n"
-
-    declare -r local ipt_store_file="/etc/iptables/rules.v4"
-    if [[ ! -e "$ipt_store_file" ]]; then
-        printf "$debug_prefix ${RED_ROLLUP_IT} Error: there is no the iptables rules store file ${END_ROLLUP_IT}\n"
-        exit 1
-    fi
-
-    iptables-save > "$ipt_store_file"
-}
-
-function clearIPTState() {
+function clearFwState() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     #
     # delete all existing rules.
@@ -230,32 +165,142 @@ function clearIPTState() {
     ipset destroy
 }
 
-function openOutputPorts() {
-    iptables -A OUTPUT -p tcp -m set --match-set OUTPUT_TCP_FWPORTS dst -m state --state NEW -j ACCEPT
-    iptables -A OUTPUT -p udp -m set --match-set OUTPUT_UDP_FWPORTS dst -m state --state NEW -j ACCEPT
+
+#
+# arg0 - wan NIC
+# arg1 - lan NIC
+#
+function setCommonFwRules() {
+
+    printf "$debug_prefix Variable WAN_ADDR_RUI is $WAN_ADDR_RUI \n"
+    # Always accept loopback traffic
+    iptables -A INPUT -i lo -j ACCEPT
+
+    # Allow established connections, and those not coming from the outside
+    iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+    # ------ ICMP rules -----------------------------------------------------
+    iptables -A OUTPUT -p icmp --icmp-type echo-request -m state --state NEW -j ACCEPT
+    iptables -A OUTPUT -p icmp --icmp-type echo-reply -m state --state NEW -j ACCEPT
+    iptables -A INPUT -p icmp --icmp-type 8 -s 0/0 -d "$WAN_ADDR_RUI" -m state --state ESTABLISHED,RELATED -j ACCEPT
+    pingOfDeathProtection
+
+    portScanProtection
+
+#    syncFloodProtection
+
+    portForwarding 
+
+    # all established/related connections from the local system (the router's os) are permited
+    iptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+    openFilterOutputPorts
+
+    # enable incoming ssh
+    iptables -A INPUT -i "$WAN_NIC_RUI" -s "$TRUSTED_WAN_ADDR_RUI" -p tcp --dport "$SSH_PORT_RUI" -m conntrack --ctstate NEW -j ACCEPT
+
+    iptables -A INPUT -m state --state NEW -i "$WAN_NIC_RUI" -j DROP
+    # Masquerade.
+    iptables -t nat -A POSTROUTING -o "$WAN_NIC_RUI" -j MASQUERADE
+ 
+    # default policies for filter tables 
+    iptables -P INPUT DROP
+    iptables -P FORWARD DROP
+    iptables -P OUTPUT DROP
+
+    # Enable routing.
+    echo 1 > /proc/sys/net/ipv4/ip_forward
 }
 
-function openOutputForwardPorts() {
-    iptables -A FORWARD -p tcp -m set --match-set OUTPUT_TCP_LANPORTS dst -m state --state NEW -j ACCEPT
-    iptables -A FORWARD -p udp -m set --match-set OUTPUT_UDP_LANPORTS dst -m state --state NEW -j ACCEPT
+function portScanProtection() {
+    iptables -N PORTSCAN
+    iptables -A PORTSCAN -p tcp --tcp-flags ACK,FIN FIN -j DROP
+    iptables -A PORTSCAN -p tcp --tcp-flags ACK,PSH PSH -j DROP
+    iptables -A PORTSCAN -p tcp --tcp-flags ACK,URG URG -j DROP
+    iptables -A PORTSCAN -p tcp --tcp-flags FIN,RST FIN,RST -j DROP
+    iptables -A PORTSCAN -p tcp --tcp-flags SYN,FIN SYN,FIN -j DROP
+    iptables -A PORTSCAN -p tcp --tcp-flags SYN,RST SYN,RST -j DROP
+    iptables -A PORTSCAN -p tcp --tcp-flags ALL ALL -j DROP
+    iptables -A PORTSCAN -p tcp --tcp-flags ALL NONE -j DROP
+    iptables -A PORTSCAN -p tcp --tcp-flags ALL FIN,PSH,URG -j DROP
+    iptables -A PORTSCAN -p tcp --tcp-flags ALL SYN,FIN,PSH,URG -j DROP
+    iptables -A PORTSCAN -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -j DROP
+    iptables -A INPUT -p tcp -j PORTSCAN
+    # TODO to know flag "-f"
+#    iptables -A INPUT -f -j DROP
+    iptables -A INPUT -p tcp ! --syn -m state --state NEW -j DROP
+    iptables -A FORWARD -p tcp ! --syn -m state --state NEW -j DROP 
+}
+
+function pingOfDeathProtection() {
+    # protects from PING of death
+    iptables -N PING_OF_DEATH
+    iptables -A PING_OF_DEATH -p icmp --icmp-type echo-request -m hashlimit --hashlimit 1/s --hashlimit-burst 10 --hashlimit-htable-expire 300000 --hashlimit-mode srcip --hashlimit-name t_PING_OF_DEATH -j RETURN
+    iptables -A PING_OF_DEATH -j DROP
+    iptables -A INPUT -p icmp --icmp-type echo-request -j PING_OF_DEATH
+}
+
+
+function syncFloodProtection() {
+    iptables -A INPUT -p tcp -sync -m tbf ! --tbf 1/s --tbf-deep 15 --tbf-mode srcip --tbf-name SYNC_FLOOD -j DROP
+    iptables -A INPUT -p tcp --dport "$SSH_PORT_RUI"-sync -m tbf ! --tbf 2/h --tbf-deepa 15 --tbf-mode srcip --tbf-name SSH_DOS -j DROP
+}
+
+function saveFwState() {
+    local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+    printf "$debug_prefix enter the function \n"
+
+    declare -r local ipt_store_file="/etc/iptables/rules.v4"
+    if [[ ! -e "$ipt_store_file" ]]; then
+        printf "$debug_prefix ${RED_ROLLUP_IT} Error: there is no the iptables rules store file ${END_ROLLUP_IT}\n"
+        exit 1
+    fi
+
+    iptables-save > "$ipt_store_file"
+}
+
+#
+# arg0 - vlan nic 
+# arg1 - vlan ip
+# arg2 - vlan gw
+# arg3 - tcp ipset out forward ports
+# arg4 - udp ipset out forward ports
+# arg7 - online/offline - there is /isn't WAN access
+#
+function addFwLAN() {
+    local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+
+    declare -r local lan_nic="$1"
+    declare -r local lan_addr="$2"
+    declare -r local lan_gw=$([ -z "$3" ] && echo "10.10.0.1" || echo "$3")
+    declare -r local out_tcp_port_set=$([ -z "$4" ] && echo "OUT_TCP_FWR_PORTS" || echo "$4")
+    declare -r local out_udp_port_set=$([ -z "$5" ] && echo "OUT_UDP_FWR_PORTS" || echo "$5")
+
+    iptables -A FORWARD -p icmp --icmp-type echo-reply -m state --state NEW -j ACCEPT
+    iptables -A FORWARD -p icmp --icmp-type echo-request -i "$lan_nic" -o "$WAN_NIC_RUI" -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+
+    iptables -A FORWARD -m state --state NEW -i "$WAN_NIC_RUI" -o "$lan_nic" -j DROP
+    iptables -A FORWARD -i "$WAN_NIC_RUI" -o "$lan_nic" -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+    iptables -A FORWARD -i "$lan_nic" -o "$WAN_NIC_RUI" -d "$WAN_ADDR_RUI" -s "$lan_addr" -p tcp -m set --match-set "$out_tcp_port_set" dst -m state --state NEW -j ACCEPT
+    iptables -A FORWARD -i "$lan_nic" -o "$WAN_NIC_RUI" -d "$WAN_ADDR_RUI" -s "$lan_addr" -p udp -m set --match-set "$out_udp_port_set" dst -m state --state NEW -j ACCEPT
+}
+
+function openFilterOutputPorts() {
+    local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+
+    iptables -A OUTPUT -p tcp -m set --match-set OUT_TCP_FW_PORTS dst -m state --state NEW -j ACCEPT
+    iptables -A OUTPUT -p udp -m set --match-set OUT_UDP_FW_PORTS dst -m state --state NEW -j ACCEPT
 }
 
 function portForwarding() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     printf "$debug_prefix enter the function \n"
     
-    declare -r local wan_nic="$1"
-    declare -r local wan_ip="$2"
-    declare -r local src_port="$3"
-    declare -r local dst_ip="$4"
-    declare -r local dst_port="$5"
+    declare -r local src_port="$SSH_PORT_RUI"
+    declare -r local dst_ip="10.10.0.21"
+    declare -r local dst_port="2222"
 
-    printf "$debug_prefix ${GRN_ROLLUP_IT} WAN NIC: [$wan_nic]${END_ROLLUP_IT}\n"
-    printf "$debug_prefix ${GRN_ROLLUP_IT} WAN IP: [$wan_ip]${END_ROLLUP_IT}\n"
-    printf "$debug_prefix ${GRN_ROLLUP_IT} WAN SRC_PORT: [$src_port]${END_ROLLUP_IT}\n"
-    printf "$debug_prefix ${GRN_ROLLUP_IT} WAN DST IP: [$dst_ip]${END_ROLLUP_IT}\n"
-    printf "$debug_prefix ${GRN_ROLLUP_IT} WAN DST PORT: [$dst_port]${END_ROLLUP_IT}\n"
-
-    iptables -t nat -A PREROUTING -i "$wan_nic" -p tcp --dport "$src_port" -j  DNAT --to-destination "$dst_ip":"$dst_port"
-    iptables -A FORWARD -i "$wan_nic" -d "$dst_ip" -p tcp --dport "$dst_port" -j ACCEPT
+    iptables -t nat -A PREROUTING -i "$WAN_NIC_RUI" -d "$dst_ip" -p tcp --dport "$src_port" -j  DNAT --to-destination "$dst_ip":"$dst_port"
+    iptables -A FORWARD -i "$WAN_NIC_RUI" -d "$dst_ip" -p tcp --dport "$dst_port" -j ACCEPT
 }
