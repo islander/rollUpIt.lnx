@@ -11,21 +11,18 @@ set -o errexit
 set -o nounset
 
 function installFw() {
+    local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+    printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
+
     installPkg "ipset" "" "" ""
     installPkg "iptables-persistent" "" "" ""
-}
 
-function testIpset() {
-    declare -rg FTP_DATA_PORT_RUI="20"
-    declare -rg FTP_CMD_PORT_RUI="21"
-    ipset create OUT_TCP_FW_PORTS bitmap:port range 1-4000
-    ipset add OU_TCP_FWPORTS "$FTP_DATA_PORT_RUI"
-    ipset add OU_TCP_FWPORTS "$FTP_CMD_PORT_RUI"
+    printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
 function configFwRules() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
-    printf "$debug_prefix enter the function \n"
+    printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
     
     if [[ -z "$1" || -z "$2" || -z "$3" ]]; then
         printf "$debug_prefix ${RED_ROLLUP_IT} Error: Empty parameters ${END_ROLLUP_IT}"
@@ -36,6 +33,7 @@ function configFwRules() {
     defineFwConstants "$1" "$2" "$3" ""
     setCommonFwRules 
 
+    printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
 #
@@ -44,7 +42,7 @@ function configFwRules() {
 #
 function defineFwConstants() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
-    printf "$debug_prefix enter the function \n"
+    printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
     
     if [[ -z "$1" || -z "$2" || -z "$3" ]]; then
         printf "$debug_prefix ${RED_ROLLUP_IT} Error: Empty parameters ${END_ROLLUP_IT}"
@@ -146,11 +144,14 @@ function defineFwConstants() {
     # ------- SSH ports ------------
     declare -rg SSH_PORT_RUI="22"
     ipset add OUT_TCP_FW_PORTS "$SSH_PORT_RUI"
-#    ipset add IN_TCP_FW_PORTS "$SSH_PORT_RUI"
+
+    printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
 function clearFwState() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+    printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
+
     #
     # delete all existing rules.
     #
@@ -163,6 +164,8 @@ function clearFwState() {
  
     ipset flush
     ipset destroy
+
+    printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
 
@@ -171,36 +174,35 @@ function clearFwState() {
 # arg1 - lan NIC
 #
 function setCommonFwRules() {
+    local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+    printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 
-    printf "$debug_prefix Variable WAN_ADDR_RUI is $WAN_ADDR_RUI \n"
     # Always accept loopback traffic
     iptables -A INPUT -i lo -j ACCEPT
 
-    # Allow established connections, and those not coming from the outside
+    # All established/related connections are permitted
     iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-
-    # ------ ICMP rules -----------------------------------------------------
-    iptables -A OUTPUT -p icmp --icmp-type echo-request -m state --state NEW -j ACCEPT
-    iptables -A OUTPUT -p icmp --icmp-type echo-reply -m state --state NEW -j ACCEPT
-    iptables -A INPUT -p icmp --icmp-type 8 -s 0/0 -d "$WAN_ADDR_RUI" -m state --state ESTABLISHED,RELATED -j ACCEPT
-    pingOfDeathProtection
-
-    portScanProtection
-
-#    syncFloodProtection
-
-    portForwarding 
-
-    # all established/related connections from the local system (the router's os) are permited
+    iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
     iptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 
+    iptables -A INPUT -p tcp -m set --match-set IN_TCP_FW_PORTS dst -m state --state NEW -j ACCEPT
+
+    # ------ Allow ICMP----------------------------------------------------- #
+    iptables -A OUTPUT -p icmp --icmp-type echo-request -m state --state NEW -j ACCEPT
+
     openFilterOutputPorts
+
+    pingOfDeathProtection
+    portScanProtection
+#    syncFloodProtection
 
     # enable incoming ssh
     iptables -A INPUT -i "$WAN_NIC_RUI" -s "$TRUSTED_WAN_ADDR_RUI" -p tcp --dport "$SSH_PORT_RUI" -m conntrack --ctstate NEW -j ACCEPT
 
-    iptables -A INPUT -m state --state NEW -i "$WAN_NIC_RUI" -j DROP
-    # Masquerade.
+    # We use the default policy [INPUT] [DROP]
+#    iptables -A INPUT -m state --state NEW -i "$WAN_NIC_RUI" -j DROP
+
+    # ----- MASQUERADE ------------------------------------------- #
     iptables -t nat -A POSTROUTING -o "$WAN_NIC_RUI" -j MASQUERADE
  
     # default policies for filter tables 
@@ -210,9 +212,15 @@ function setCommonFwRules() {
 
     # Enable routing.
     echo 1 > /proc/sys/net/ipv4/ip_forward
+
+    local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+    printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
 function portScanProtection() {
+    local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+    printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
+
     iptables -N PORTSCAN
     iptables -A PORTSCAN -p tcp --tcp-flags ACK,FIN FIN -j DROP
     iptables -A PORTSCAN -p tcp --tcp-flags ACK,PSH PSH -j DROP
@@ -230,25 +238,39 @@ function portScanProtection() {
 #    iptables -A INPUT -f -j DROP
     iptables -A INPUT -p tcp ! --syn -m state --state NEW -j DROP
     iptables -A FORWARD -p tcp ! --syn -m state --state NEW -j DROP 
+
+    local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+    printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
+
 }
 
 function pingOfDeathProtection() {
+    local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+    printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
+
     # protects from PING of death
     iptables -N PING_OF_DEATH
     iptables -A PING_OF_DEATH -p icmp --icmp-type echo-request -m hashlimit --hashlimit 1/s --hashlimit-burst 10 --hashlimit-htable-expire 300000 --hashlimit-mode srcip --hashlimit-name t_PING_OF_DEATH -j RETURN
     iptables -A PING_OF_DEATH -j DROP
     iptables -A INPUT -p icmp --icmp-type echo-request -j PING_OF_DEATH
+
+    printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
 
 function syncFloodProtection() {
+    local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+    printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
+
     iptables -A INPUT -p tcp -sync -m tbf ! --tbf 1/s --tbf-deep 15 --tbf-mode srcip --tbf-name SYNC_FLOOD -j DROP
     iptables -A INPUT -p tcp --dport "$SSH_PORT_RUI"-sync -m tbf ! --tbf 2/h --tbf-deepa 15 --tbf-mode srcip --tbf-name SSH_DOS -j DROP
+
+    printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
 function saveFwState() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
-    printf "$debug_prefix enter the function \n"
+    printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 
     declare -r local ipt_store_file="/etc/iptables/rules.v4"
     if [[ ! -e "$ipt_store_file" ]]; then
@@ -257,6 +279,8 @@ function saveFwState() {
     fi
 
     iptables-save > "$ipt_store_file"
+
+    printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
 #
@@ -269,6 +293,7 @@ function saveFwState() {
 #
 function addFwLAN() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+    printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 
     declare -r local lan_nic="$1"
     declare -r local lan_addr="$2"
@@ -276,31 +301,42 @@ function addFwLAN() {
     declare -r local out_tcp_port_set=$([ -z "$4" ] && echo "OUT_TCP_FWR_PORTS" || echo "$4")
     declare -r local out_udp_port_set=$([ -z "$5" ] && echo "OUT_UDP_FWR_PORTS" || echo "$5")
 
-    iptables -A FORWARD -p icmp --icmp-type echo-reply -m state --state NEW -j ACCEPT
-    iptables -A FORWARD -p icmp --icmp-type echo-request -i "$lan_nic" -o "$WAN_NIC_RUI" -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
 
-    iptables -A FORWARD -m state --state NEW -i "$WAN_NIC_RUI" -o "$lan_nic" -j DROP
-    iptables -A FORWARD -i "$WAN_NIC_RUI" -o "$lan_nic" -m state --state ESTABLISHED,RELATED -j ACCEPT
+    # -- Start ICMP -------------------------------------------------------- #
+    iptables -A FORWARD -p icmp --icmp-type echo-request -s "$lan_addr" -d "0/0" -m state --state NEW -j ACCEPT
+    iptables -A INPUT -p icmp --icmp-type echo-request -s "$lan_addr" -d "$lan_gw" -m state --state NEW -j ACCEPT
+    # --- End ICMP --------------------------------------------------------- #
 
-    iptables -A FORWARD -i "$lan_nic" -o "$WAN_NIC_RUI" -d "$WAN_ADDR_RUI" -s "$lan_addr" -p tcp -m set --match-set "$out_tcp_port_set" dst -m state --state NEW -j ACCEPT
-    iptables -A FORWARD -i "$lan_nic" -o "$WAN_NIC_RUI" -d "$WAN_ADDR_RUI" -s "$lan_addr" -p udp -m set --match-set "$out_udp_port_set" dst -m state --state NEW -j ACCEPT
+    # We use the default policy [FORWARD] [DROP]
+#    iptables -A FORWARD -m state --state NEW -i "$WAN_NIC_RUI" -o "$lan_nic" -j DROP
+
+    iptables -A FORWARD -i "$lan_nic" -o "$WAN_NIC_RUI" -s "$lan_addr" -p udp -m set --match-set "$out_udp_port_set" dst -m state --state NEW -j ACCEPT
+   
+    iptables -A FORWARD -i "$lan_nic" -o "$WAN_NIC_RUI" -s "$lan_addr" -p tcp -m set --match-set "$out_tcp_port_set" dst -m state --state NEW -j ACCEPT
+
+    printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
 function openFilterOutputPorts() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+    printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 
     iptables -A OUTPUT -p tcp -m set --match-set OUT_TCP_FW_PORTS dst -m state --state NEW -j ACCEPT
     iptables -A OUTPUT -p udp -m set --match-set OUT_UDP_FW_PORTS dst -m state --state NEW -j ACCEPT
+
+    printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
 function portForwarding() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
-    printf "$debug_prefix enter the function \n"
+    printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
     
-    declare -r local src_port="$SSH_PORT_RUI"
-    declare -r local dst_ip="10.10.0.21"
-    declare -r local dst_port="2222"
+    declare -r local src_port=$([ -z "$1" ] && echo "2222" || echo "$1")
+    declare -r local dst_ip=$([ -z "$2" ] && echo "10.10.0.21" || echo "$2")
+    declare -r local dst_port=$([ -z "$3" ] && echo "$SSH_PORT_RUI" || echo "$3")
 
-    iptables -t nat -A PREROUTING -i "$WAN_NIC_RUI" -d "$dst_ip" -p tcp --dport "$src_port" -j  DNAT --to-destination "$dst_ip":"$dst_port"
-    iptables -A FORWARD -i "$WAN_NIC_RUI" -d "$dst_ip" -p tcp --dport "$dst_port" -j ACCEPT
+    iptables -A FORWARD -i "$WAN_NIC_RUI" -p tcp -d "$dst_ip" --dport "$dst_port" -j ACCEPT
+    iptables -t nat -I PREROUTING -p tcp -d "$WAN_GW_RUI" --dport "$src_port" -j DNAT --to "$dst_ip":"$dst_port"
+
+    printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }

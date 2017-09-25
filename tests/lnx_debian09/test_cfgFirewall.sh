@@ -4,7 +4,7 @@ set -o errexit
 set -o nounset
 set -o xtrace
 
-# exec 1>stdout.log
+#exec 1>stdout.log 
 exec 2>stderr.log
 
 source ../../libs/addColors.sh
@@ -27,6 +27,7 @@ function main() {
 
                 configFwRules "eth1" "172.16.102.0/24" "172.16.102.11" ""       
                 addFwLAN "eth0" "10.10.0.0/24" "10.10.0.1" "" "" ""
+                portForwarding "2222" "10.10.0.21" "22"
 
                 saveFwState
 
