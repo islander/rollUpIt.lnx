@@ -25,7 +25,7 @@ function configFwRules() {
     printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
     
     if [[ -z "$1" || -z "$2" || -z "$3" ]]; then
-        printf "$debug_prefix ${RED_ROLLUP_IT} Error: Empty parameters ${END_ROLLUP_IT}"
+        printf "$debug_prefix ${red_rollup_it} error: empty parameters ${end_rollup_it}"
         exit 1
     fi     
     

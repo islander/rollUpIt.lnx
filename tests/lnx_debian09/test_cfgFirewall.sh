@@ -28,6 +28,7 @@ function main() {
                 configFwRules "eth1" "172.16.102.0/24" "172.16.102.11" ""       
                 addFwLAN "eth0" "10.10.0.0/24" "10.10.0.1" "" "" ""
                 portForwarding "2222" "10.10.0.21" "22"
+                portForwarding "2223" "10.10.0.2" "22"
 
                 saveFwState
 
