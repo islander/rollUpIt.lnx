@@ -31,7 +31,7 @@ if [[ -n "$debian_version" && "$debian_version" -ge 8 ]]; then
 	installDefPkgSuit
 	createAdmUser $1 $2
 	prepareSudoersd $1
-    selLocale "en_US.UTF-8"
+    setLocale "en_US.UTF-8 UTF-8"
     prepareSSH
 else
 	printf "${RED_ROLLUP_IT} $debug_prefix Error: Can't run scripts there is no a suitable distibutive version ${END_ROLLUP_IT} \n"
@@ -166,13 +166,10 @@ if [[ -n "$1" && -n "$2" ]]; then
 	fi
 	
 	printf "debug: [ $0 ] There is no [ $1 ] user, let's create him \n"
-	local errs="$(adduser $1 --gecos "$1" --disabled-password 2>&1 1>/dev/null)"
-
-	adduser $1 --gecos "$1" --disabled-password 2>stream_error.log 1>stdout.log
-
-    if [[ -e stream_error.log ]]; then
-        errs="$(cat stream_error.log)"
-    fi
+	adduser $1 --gecos "$1" --disabled-password 2>stream_error.log
+	if [[ -e stream_error.log ]]; then
+		errs="$(cat stream_error.log)"
+	fi
 
 	if [[ -n "$errs" ]]; then
 		printf "${RED_ROLLUP_IT} $debug_prefix Error: Can't create the user: [ $errs ]${END_ROLLUP_IT}"		
@@ -260,7 +257,7 @@ apt-get -y dist-upgrade
 function setLocale() {
 local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
-
+    declare -r local locale_gen_cfg_path="/etc/locale.gen"
     if [[ ! -e $locale_gen_cfg_path ]]; then
         printf "$debug_prefix ${RED_ROLLUP_IT} Error: No locale.gen exists ${END_ROLLUP_IT}\n"
         exit 1;
@@ -276,7 +273,7 @@ printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
         echo "" > stream_error.log
     fi
     
-    sed -i "/0,/^#.*$ln.*$/ s/^#.*$ln.*$/$ln/g" $locale_gen_cfg_path 2>stream_error.log 
+    sed -i "0,/.*$ln.*$/ s/.*$ln.*$/$ln/g" $locale_gen_cfg_path 2>stream_error.log 
     if [[ -e stream_error.log && -n "$(cat stream_error.log)" ]]; then
         printf "$debug_prefix ${RED_ROLLUP_IT} Error: Can't activate the loale. 
                 Error List: $(cat stream_error.log) ${END_ROLLUP_IT}\n"
@@ -292,12 +289,11 @@ printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
-
 function prepareSSH() {
     declare -r local daemon_cfg="/etc/ssh/sshd_config"
 
-    sed -i "/0,/^.*PermitRootLogin.*$/s/^.*PermitRootLogin.*/PermitRootLogin yes/g" $daemon_cfg
-    sed -i "/0,/^.*PubkeyAuthentication.*$/s/^.*PubkeyAuthentication.*/PubkeyAuthentication yes/g" $daemon_cfg
+    sed -i "0,/.*PermitRootLogin.*$/ s/.*PermitRootLogin.*/PermitRootLogin yes/g" $daemon_cfg
+    sed -i "0,/.*PubkeyAuthentication.*$/ s/.*PubkeyAuthentication.*/PubkeyAuthentication yes/g" $daemon_cfg
 }
 
 

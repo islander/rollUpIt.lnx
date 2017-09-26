@@ -4,6 +4,8 @@ set -o errexit
 set -o xtrace
 set -o nounset
 
+exec 2>stderr.log
+
 source ../../libs/addColors.sh
 source ../../libs/addVars.sh
 source ../../libs/lnx_debian09/commons.sh
