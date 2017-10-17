@@ -207,3 +207,7 @@ else
     printf "$debug_prefix ${RED_ROLLUP_IT} pkg [ $1 ] is not installed. Can't remove it ${END_ROLLUP_IT}"
 fi
 }
+
+function getSudoUser_RUI() {
+    echo "$([[ -n "$SUDO_USER" ]] && echo "$SUDO_USER" || echo "$(whoami)")"
+}

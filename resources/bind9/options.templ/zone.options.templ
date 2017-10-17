@@ -1,11 +1,11 @@
-// Example, 0 zone "workhorse.local" {
-zone '0.10.10.in-addr.arpa' {
+// Zone template need to be filled with parameters
+zone <ZONE-NAME> {
 
-type master;
+    // type
     // Example 1, 
     // type master;
 
-file /etc/bind/zones/0.10.10.in-addr.arpa;
+    // file
     // Example 2,
     // file "/etc/bind/zones/workhorse.local";
 
@@ -16,18 +16,12 @@ file /etc/bind/zones/0.10.10.in-addr.arpa;
     // };
     
     // <MASTERS>
-masters { 
-                10.10.0.0.3; 
-        };
     // Example, 4
     // masters {
     //    10.10.0.2;
     // };
     
     //<ALLOW-UPDATE>
-allow-update { 
-                key; local-dnsupdater; 
-        };
     // Example, 5 
     //  allow-update {
     //     key local-dnsupdater;

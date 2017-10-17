@@ -11,45 +11,42 @@ set -o errexit
 set -o nounset
 set -o xtrace
 
+
 function prepare_Bind9_RUI() {
 local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
-
     checkConfigFileSet_Bind9_RUI
 
+    declare -rg OPTIONS_TEMPL_DIR_BIND9_RUI="$RSRC_DIR_ROLL_UP_IT/bind9/options.templ"
+    declare -rg ZONES_TEMPL_DIR_BIND9_RUI="$RSRC_DIR_ROLL_UP_IT/bind9/zones.templ"
+    declare -rg OUT_DIR_BIND9_RUI="$RSRC_DIR_ROLL_UP_IT/bind9/out"
+
     if [[ -d "$RSRC_DIR_ROLL_UP_IT/bind9/out/" ]]; then 
-        rm -Rf "$RSRC_DIR_ROLL_UP_IT/bind9/out"
+        rm -Rf "$OUT_DIR_BIND9_RUI"
     fi 
 
-    if [[ ! -d "$RSRC_DIR_ROLL_UP_IT/bind9/out/" ]]; then 
-        sudo -u "likhobabin_im" mkdir -p "$RSRC_DIR_ROLL_UP_IT/bind9/out/zones"
-        sudo -u "likhobabin_im" mkdir -p "$RSRC_DIR_ROLL_UP_IT/bind9/out/keys"
-    fi 
+    declare -rg SUDO_USER_RUI="$(getSudoUser_RUI)"
 
-    declare -rg COMMON_OPTS_TEMPL_BIND_RUI="$RSRC_DIR_ROLL_UP_IT/bind9/named.conf.options.templ"
-    declare -rg COMMON_OPTS_BIND_RUI="$RSRC_DIR_ROLL_UP_IT/bind9/named.conf.options"
+    mkdir -p "$OUT_DIR_BIND9_RUI/zones"
+    mkdir -p "$OUT_DIR_BIND9_RUI/keys/local"
 
-    declare -rg ZONE_HEAD_TEMPL_BIND_RUI="$RSRC_DIR_ROLL_UP_IT/bind9/named.conf.local.templ"
-    declare -rg ZONE_HEAD_BIND_RUI="$RSRC_DIR_ROLL_UP_IT/bind9/named.conf.local"
+    declare -rg COMMON_OPTS_TEMPL_BIND9_RUI="$OPTIONS_TEMPL_DIR_BIND9_RUI/named.conf.options.templ"
+    declare -rg COMMON_OPTS_BIND9_RUI="$OPTIONS_TEMPL_DIR_BIND9_RUI/named.conf.options"
+
+    declare -rg ZONE_HEAD_TEMPL_BIND9_RUI="$OPTIONS_TEMPL_DIR_BIND9_RUI/named.conf.local.templ"
+    declare -rg ZONE_HEAD_BIND9_RUI="$OPTIONS_TEMPL_DIR_BIND9_RUI/named.conf.local"
     
-    declare -rg ZONE_OPTS_TEMPL_BIND_RUI="$RSRC_DIR_ROLL_UP_IT/bind9/zone.templ"
-    declare -rg ZONE_CONTENT_BIND_RUI="$RSRC_DIR_ROLL_UP_IT/bind9/zone.content"
+    declare -rg ZONE_OPTS_TEMPL_BIND9_RUI="$OPTIONS_TEMPL_DIR_BIND9_RUI/zone.options.templ"
+    declare -rg ZONE_OPTS_BIND9_RUI="$OPTIONS_TEMPL_DIR_BIND9_RUI/zone.options"
 
-    declare -rg ZONE_FILE_TEMPL_BIND_RUI="$RSRC_DIR_ROLL_UP_IT/bind9/zones/file-zone.templ"
+    declare -rg ZONE_FILE_TEMPL_BIND9_RUI="$ZONES_TEMPL_DIR_BIND9_RUI/zone.templ"
 
     declare -rg TAB_SYM_RUI=$'\t'
     declare -rg DTAB_SYM_RUI=$'\t\t'
 
-    #TODO replace user_name with global variable
-    if [[ ! -e "$COMMON_OPTS_BIND_RUI" ]]; then 
-        sudo -u "likhobabin_im" cp "$COMMON_OPTS_TEMPL_BIND_RUI" "$COMMON_OPTS_BIND_RUI"
-    fi
-
-    #TODO replace user_name with global variable
-    if [[ ! -e "$ZONE_HEAD_BIND_RUI" ]]; then 
-        sudo -u "likhobabin_im" cp "$ZONE_HEAD_TEMPL_BIND_RUI" "$ZONE_HEAD_BIND_RUI"
-    fi
-
+    cp "$COMMON_OPTS_TEMPL_BIND9_RUI" "$COMMON_OPTS_BIND9_RUI"
+    cp "$ZONE_HEAD_TEMPL_BIND9_RUI" "$ZONE_HEAD_BIND9_RUI"
+    
 printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
@@ -75,7 +72,7 @@ printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
 #
-# arg0 - ACL name
+# a - ACL name
 # arg1[] - ACL value
 # isRecursion - true/false
 #
@@ -98,7 +95,7 @@ function setACL_Bind9_RUI() {
     setOptionByTag_Bind9_RUI "<ALLOW-QUERY>" acl_list "allow-query" "" ""
     if [[ "$isRecursion" == "true" ]]; then
         setOptionByTag_Bind9_RUI "<ALLOW-RECURSION>" acl_list "allow-recursion" "" ""
-        setOption_Bind9_RUI "recursion" "yes" "$COMMON_OPTS_BIND_RUI"
+        setOption_Bind9_RUI "recursion" "yes" "$COMMON_OPTS_BIND9_RUI"
     fi
 
     printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
@@ -120,7 +117,7 @@ function setForwarders_Bind9_RUI() {
     local -n forward_list="$1"
     declare -r local forward_type="$2"
     setOptionByTag_Bind9_RUI "<FORWARDERS>" forward_list "forwarders" "" ""
-    setOption_Bind9_RUI "forward" "$forward_type" "$COMMON_OPTS_BIND_RUI"
+    setOption_Bind9_RUI "forward" "$forward_type" "$COMMON_OPTS_BIND9_RUI"
 }
 
 #
@@ -136,7 +133,9 @@ function setTransfers_Bind9_RUI() {
     fi
     
     local -n transfers="$1"
-    setOptionByTag_Bind9_RUI "<ALLOW-TRANSFERS>" transfers "allow-transfers" "" ""
+    printf "$debug_prefix allow-transfers : ${transfers[@]}\n"
+
+    setOptionByTag_Bind9_RUI "<ALLOW-TRANSFER>" transfers "allow-transfer" "" ""
 }
 
 #
@@ -152,7 +151,7 @@ function setOptionByTag_Bind9_RUI() {
     declare -r local opt_name="$3"
     declare -r lcoal isAppend=$([[ -z "$4" ]] && echo "false" || echo "$4")
     declare -r local opt_pref="$opt_name { "
-    declare -r local opt_file_path=$([[ -z "$5" ]] && echo "$COMMON_OPTS_BIND_RUI" || echo "$5")
+    declare -r local opt_file_path=$([[ -z "$5" ]] && echo "$COMMON_OPTS_BIND9_RUI" || echo "$5")
     local opt_res=""
 
     for opt_it in ${opt_values[@]}; do
@@ -195,7 +194,7 @@ function setOption_Bind9_RUI() {
 #
 # arg1 list0 - 1) a zone's name; 2) a zone's file path;  
 # arg2 list1 - masters/allow-transfer
-# arg3 list2 - allow-update
+# arg3 list2 - allow-pdate
 # arg4 - ns type
 # arg5 list3 - zone file parameters
 #
@@ -209,7 +208,7 @@ function setZoneOptions_Bind9_RUI() {
 
 
     #TODO replace user_name with global variable
-    sudo -u "likhobabin_im" cp "$ZONE_OPTS_TEMPL_BIND_RUI" "$ZONE_CONTENT_BIND_RUI"
+    cp "$ZONE_OPTS_TEMPL_BIND9_RUI" "$ZONE_OPTS_BIND9_RUI"
 
     declare -n zone_list_000="$1"
     declare -n zone_list_001="$2"
@@ -218,19 +217,19 @@ function setZoneOptions_Bind9_RUI() {
     declare -r local zone_file_path="${zone_list_000[1]}"
     declare -r local ns_type="$4"
 
-    sed -i "0,/.*<ZONE-NAME>.*/ s/<ZONE-NAME>/'"$zone_name"'/" $ZONE_CONTENT_BIND_RUI
+    sed -i "0,/.*<ZONE-NAME>.*/ s/<ZONE-NAME>/'"$zone_name"'/" $ZONE_OPTS_BIND9_RUI
 
-    setOption_Bind9_RUI "file" "$zone_file_path" "$ZONE_CONTENT_BIND_RUI"
+    setOption_Bind9_RUI "file" "$zone_file_path" "$ZONE_OPTS_BIND9_RUI"
     if [[ "$ns_type" == "master" ]]; then
 
-        setOption_Bind9_RUI "type" "master" "$ZONE_CONTENT_BIND_RUI"
+        setOption_Bind9_RUI "type" "master" "$ZONE_OPTS_BIND9_RUI"
         setOptionByTag_Bind9_RUI "<MASTERS>" zone_list_001 "masters" \
-            "" "$ZONE_CONTENT_BIND_RUI"           
+            "" "$ZONE_OPTS_BIND9_RUI"           
 
     else if [[ "$ns_type" == "slave" ]]; then
 
-        setOption_Bind9_RUI "type" "master" "$ZONE_CONTENT_BIND_RUI"
-        setOptionByTag_Bind9_RUI "<ALLOW-TRANSFER>" zone_list_001 "allow-transfer" "" "$ZONE_CONTENT_BIND_RUI"           
+        setOption_Bind9_RUI "type" "master" "$ZONE_OPTS_BIND9_RUI"
+        setOptionByTag_Bind9_RUI "<ALLOW-TRANSFER>" zone_list_001 "allow-transfer" "" "$ZONE_OPTS_BIND9_RUI"           
 
         else 
             printf "$declare_prefix ${RED_ROLLUP_IT} Invalid nameserver type ${END_ROLLUP_IT}\n"
@@ -238,19 +237,37 @@ function setZoneOptions_Bind9_RUI() {
         fi
     fi
 
-    setOptionByTag_Bind9_RUI "<ALLOW-UPDATE>" allow_update_keys "allow-update" "" "$ZONE_CONTENT_BIND_RUI"           
+    setOptionByTag_Bind9_RUI "<ALLOW-UPDATE>" allow_update_keys "allow-update" "" "$ZONE_OPTS_BIND9_RUI"           
 
-    cat "$ZONE_CONTENT_BIND_RUI" >> "$ZONE_HEAD_BIND_RUI"
+    cat "$ZONE_OPTS_BIND9_RUI" >> "$ZONE_HEAD_BIND9_RUI"
 
     # define the zone 's file 
-    declare -r local zone_name_fp="$RSRC_DIR_ROLL_UP_IT/bind9/zones/$zone_name"
+    declare -r local zone_name_fp="$ZONES_TEMPL_DIR_BIND9_RUI/$zone_name"
+    packZoneFile_Bind9_RUI "$zone_name_fp" "$5" 
 
+    # TODO replace with a global var of username
+    mv "$zone_name_fp" "$OUT_DIR_BIND9_RUI/zones"
+}
+
+#
+# arg0 - a zone's file
+# arg1 - a zone's parameter list
+#
+function packZoneFile_Bind9_RUI(){
+    local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+    printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
+    if [[ -z $1 || -z $2 ]]; then
+        printf "$debug_prefix ${RED_ROLLUP_IT} No options passed ${END_ROLLUP_IT}\n"
+        exit 1
+    fi
+    
     if [[ -e "$zone_name_fp" ]]; then
         rm "$zone_name_fp"
     fi
 
-    sudo -u "likhobabin_im" cp "$ZONE_FILE_TEMPL_BIND_RUI" "$zone_name_fp"  
-    local -n zf_parameters="$5"
+    cp "$ZONE_FILE_TEMPL_BIND9_RUI" "$zone_name_fp" 
+
+    local -n zf_parameters="$2"
     declare -r local zone_ttl="${zf_parameters[0]}"
     declare -r local zone_soa_header="${zf_parameters[1]}"
     declare -r local zone_serial_num="${zf_parameters[2]}"
@@ -287,9 +304,38 @@ $TTL '"$zone_ttl"'' "$zone_name_fp"
 
     sed -i '/; <NS-02>/a \
 @'"${DTAB_SYM_RUI}"'IN'"${DTAB_SYM_RUI}"'NS'"${DTAB_SYM_RUI}"''"$zone_ns02"'' "$zone_name_fp"
+}
 
-    # TODO replace with a global var of username
-    sudo -u "likhobabin_im" mv "$zone_name_fp" "$RSRC_DIR_ROLL_UP_IT/bind9/out/zones"
+#
+# arg0 - algoritm name
+# arg1 - key name
+# alg2 - key size
+#
+function genDNSKey_Bind9_RUI() {
+local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
+
+declare -r local key_alg="$([[ -z "$1" ]] && echo "hmac-md5" || echo "$1")"
+declare -r local key_name="$([[ -z "$2" ]] && echo "local-dnsupdater" || echo "$2")"
+declare -r local key_size="$([[ -z "$3" ]] && echo "512" || echo "$3")"
+
+if [[ -e stream_error.log ]]; then
+    echo "" > stream_error.log
+fi
+
+dnssec-keygen -a $key_alg -b $key_size -n USER $key_name 2>stream_error.log
+onErrors "$debug_prefix ${RED_ROLLUP_IT} Error DNS key generation"
+
+declare -r local key_value="$(awk 'BEGIN{RS="\n";FS=": "} NR==3{ print $2 }' K$key_name*.private)"
+
+sudo -u "$SUDO_USER_RUI" echo "key $key_name { 
+    algorithm $key_alg;
+    secrete \"$key_value\";
+};" > "$OUT_DIR_BIND9_RUI/keys/local/dnskeys.conf"
+
+rm -f *.private *.key
+
+printf "$debug_prefix ${GRN_ROLLUP_IT} Exit the function ${END_ROLLUP_IT} \n"
 }
 
 function post_Bind9_RUI() {
@@ -297,7 +343,7 @@ function post_Bind9_RUI() {
     printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 
     # cp "$COMMON_OPTS_BIND_RUI" "$ZONE_HEAD_BIND_RUI" "/etc/bind/"
-    mv "$COMMON_OPTS_BIND_RUI" "$ZONE_HEAD_BIND_RUI" "$RSRC_DIR_ROLL_UP_IT/bind9/out/"
+    mv "$COMMON_OPTS_BIND9_RUI" "$ZONE_HEAD_BIND9_RUI" "$OUT_DIR_BIND9_RUI"
 
     # rm -Rf "$RSRC_DIR_ROLL_UP_IT/bind9/out/"
 }

@@ -17,7 +17,7 @@ local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
     
     prepare_Bind9_RUI
-    setCommonOptions_Bind9_RUI "master"
+    setCommonOptions_Bind9_RUI "slave"
     
     declare -r local zone_000_name="workhorse.local"
     declare -A local zone_000_list_000=([0]="$zone_000_name" [1]="\/etc\/bind\/zones\/$zone_000_name")
@@ -54,7 +54,7 @@ printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
         # TTL
         [0]="3600" 
         # SOA header 
-        [1]="ns1.$zone_000_name.\tadmin@$zone_000_name." 
+        [1]="ns1.$zone_001_name.\tadmin@$zone_001_name." 
         # Serial Number
         [2]="0" 
         # Refresh
@@ -77,9 +77,10 @@ printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
     setZoneOptions_Bind9_RUI zone_001_list_000 zone_001_allow_transfers \
         zone_001_allow_update "master" zone_001_param_list
 
+    genDNSKey_Bind9_RUI "" "" ""
+
     post_Bind9_RUI
     
-
 printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 }
 
@@ -90,7 +91,7 @@ function setCommonOptions_Bind9_RUI() {
 local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 
-    declare -r local ns_type=$([[ -z "$1" ]] && echo "master" || echo "slave")
+    declare -r local ns_type=$([[ -z "$1" ]] && echo "master" || echo "$1")
     declare -A local acl_list_001=([0]="192.168.0.1/16" [1]="10.10.10.0/16" [2]="172.16.0.0/24")
     declare -A local acl_list_002=([0]="192.168.2.1/16")
     declare -A local acl_list_003=([0]="192.168.3.1/16")
@@ -100,12 +101,15 @@ printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 
     setACL_Bind9_RUI "$acl_name" acl_list_001 "$isRecursion" 
     setForwarders_Bind9_RUI forwarders_list  "first"
-    setOption_Bind9_RUI "directory" "\/var\/\bind\/cache" "$COMMON_OPTS_BIND_RUI"
+    setOption_Bind9_RUI "directory" "\/var\/\bind\/cache" "$COMMON_OPTS_BIND9_RUI"
+    printf "$debug_prefix ns_type: $ns_type\n"
     if [[ "$ns_type" == "master" ]]; then
+        printf "$debug_prefix ${GRN_ROLLUP_IT} Choose: MASTER ${END_ROLLUP_IT} \n"
         declare -A local transfers_list=([0]="10.10.0.3")
         setTransfers_Bind9_RUI transfers_list
     else
-        declare -A local transfers_none=([0]="none")
+        printf "$debug_prefix  ${GRN_ROLLUP_IT} Choose SLAVE ${END_ROLLUP_IT} \n"
+        declare -A local transfers_none=([0]="\"none\"")
         setTransfers_Bind9_RUI transfers_none
     fi
 
