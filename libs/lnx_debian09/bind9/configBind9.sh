@@ -328,7 +328,7 @@ onErrors "$debug_prefix ${RED_ROLLUP_IT} Error DNS key generation"
 
 declare -r local key_value="$(awk 'BEGIN{RS="\n";FS=": "} NR==3{ print $2 }' K$key_name*.private)"
 
-sudo -u "$SUDO_USER_RUI" echo "key $key_name { 
+echo "key $key_name { 
     algorithm $key_alg;
     secrete \"$key_value\";
 };" > "$OUT_DIR_BIND9_RUI/keys/local/dnskeys.conf"
