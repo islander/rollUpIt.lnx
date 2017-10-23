@@ -10,17 +10,17 @@ set -o errexit
 # To be failed when it tries to use undeclare variables
 set -o nounset
 
-function installFw() {
+function installFw_FW_RUI() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 
-    installPkg "ipset" "" "" ""
-    installPkg "iptables-persistent" "" "" ""
+    installPkg_COMMON_RUI "ipset" "" "" ""
+    installPkg_COMMON_RUI "iptables-persistent" "" "" ""
 
     printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
-function configFwRules() {
+function configFwRules_FW_RUI() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
     
@@ -29,9 +29,9 @@ function configFwRules() {
         exit 1
     fi     
     
-    clearFwState    
-    defineFwConstants "$1" "$2" "$3" ""
-    setCommonFwRules 
+    clearFwState_FW_RUI    
+    defineFwConstants_FW_RUI "$1" "$2" "$3" ""
+    setCommonFwRules_FW_RUI 
 
     printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
@@ -40,7 +40,7 @@ function configFwRules() {
 # arg0 - wlan nic
 # arg1 - wlan ip
 #
-function defineFwConstants() {
+function defineFwConstants_FW_RUI() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
     
@@ -73,7 +73,7 @@ function defineFwConstants() {
     declare -rg SMTP_PORT_RUI="25"
     # Secured SMTP
     declare -rg SSMTP_PORT_RUI="465"
-    ipset add OUT_TCP_FW_PORTS $SMTP_PORT_RUI
+    ipset add OUT_TCP_FW_PORTS "$SMTP_PORT_RUI"
     ipset add OUT_TCP_FWR_PORTS "$SMTP_PORT_RUI"
     ipset add OUT_TCP_FW_PORTS "$SSMTP_PORT_RUI"
     ipset add OUT_TCP_FWR_PORTS "$SSMTP_PORT_RUI"
@@ -148,7 +148,7 @@ function defineFwConstants() {
     printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
-function clearFwState() {
+function clearFwState_FW_RUI() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 
@@ -173,7 +173,7 @@ function clearFwState() {
 # arg0 - wan NIC
 # arg1 - lan NIC
 #
-function setCommonFwRules() {
+function setCommonFwRules_FW_RUI() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 
@@ -190,10 +190,10 @@ function setCommonFwRules() {
     # ------ Allow ICMP----------------------------------------------------- #
     iptables -A OUTPUT -p icmp --icmp-type echo-request -m state --state NEW -j ACCEPT
 
-    openFilterOutputPorts
+    openFilterOutputPorts_FW_RUI
 
-    pingOfDeathProtection
-    portScanProtection
+    pingOfDeathProtection_FW_RUI
+    portScanProtection_FW_RUI
 #    syncFloodProtection
 
     # enable incoming ssh
@@ -217,7 +217,7 @@ function setCommonFwRules() {
     printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
-function portScanProtection() {
+function portScanProtection_FW_RUI() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 
@@ -244,7 +244,7 @@ function portScanProtection() {
 
 }
 
-function pingOfDeathProtection() {
+function pingOfDeathProtection_FW_RUI() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 
@@ -258,7 +258,7 @@ function pingOfDeathProtection() {
 }
 
 
-function syncFloodProtection() {
+function syncFloodProtection_FW_RUI() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 
@@ -268,7 +268,7 @@ function syncFloodProtection() {
     printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
-function saveFwState() {
+function saveFwState_FW_RUI() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 
@@ -291,7 +291,7 @@ function saveFwState() {
 # arg4 - udp ipset out forward ports
 # arg7 - online/offline - there is /isn't WAN access
 #
-function addFwLAN() {
+function addFwLAN_FW_RUI() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 
@@ -317,7 +317,7 @@ function addFwLAN() {
     printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
-function openFilterOutputPorts() {
+function openFilterOutputPorts_FW_RUI() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 
@@ -327,7 +327,7 @@ function openFilterOutputPorts() {
     printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
-function portForwarding() {
+function portForwarding_FW_RUI() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
     

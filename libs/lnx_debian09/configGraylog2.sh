@@ -8,10 +8,10 @@ set -o errexit
 # To be failed when it tries to use undeclare variables
 set -o nounset
 
-function preJavaInstallation() {
+function preJavaInstallation_GRAYLOG2_RUI() {
 	local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 
-	installPkg "dirmngr" "" "" ""
+	installPkg_COMMON_RUI "dirmngr" "" "" ""
 
     if [[ -e stream_error.log ]]; then
         echo "" > stream_error.log
@@ -33,15 +33,15 @@ function preJavaInstallation() {
 	fi
 }
 
-function installJava() {
+function installJava_GRAYLOG2_RUI() {
 local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 printf "Entering $debug_prefix\n"
 
-preJavaInstallation
-installPkg "oracle-java8-installer" "" "" 
+preJavaInstallation_GRAYLOG2_RUI
+installPkg_COMMON_RUI "oracle-java8-installer" "" "" 
 }
 
-function preMongoDBInstallation() {
+function preMongoDBInstallation_GRAYLOG2_RUI() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 
     if [[ -e stream_error.log ]]; then
@@ -62,15 +62,15 @@ function preMongoDBInstallation() {
 	fi
 }
 
-function installMongoDB() {
+function installMongoDB_GRAYLOG2_RUI() {
 local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 printf "Entering $debug_prefix\n"
 
-# preMongoDBInstallation
-installPkg "mongodb-server" "" ""
+# preMongoDBInstallation_GRAYLOG2_RUI
+installPkg_COMMON_RUI "mongodb-server" "" ""
 }
 
-function preElasticSearchInstallation() {
+function preElasticSearchInstallation_GRAYLOG2_RUI() {
 	local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     printf "Entering $debug_prefix\n"
 
@@ -84,29 +84,29 @@ function preElasticSearchInstallation() {
 	fi
 }
 
-function installElasticSearch() {
+function installElasticSearch_GRAYLOG2_RUI() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     printf "Entering $debug_prefix\n"
     
-    preElasticSearchInstallation
-    installPkg "elasticsearch" "" ""
+    preElasticSearchInstallation_GRAYLOG2_RUI
+    installPkg_COMMON_RUI "elasticsearch" "" ""
 
 }
 
-function preGraylog2Installation() {
-    installJava
-    installMongoDB
-    installElasticSearch
+function preGraylog2Installation_GRAYLOG2_RUI() {
+    installJava_GRAYLOG2_RUI
+    installMongoDB_GRAYLOG2_RUI
+    installElasticSearch_GRAYLOG2_RUI
 }
 
-function installGraylog2() {
+function installGraylog2_GRAYLOG2_RUI() {
 	local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     printf "Entering $debug_prefix\n"
     
-    preGraylog2Installation
+    preGraylog2Installation_GRAYLOG2_RUI
 
     res=""
-    isPkgInstalled "graylog-server" res
+    isPkgInstalled_COMMON_RUI "graylog-server" res
 
     if [[ "$res" == "true" ]]; then
         printf "$debug_prefix Graylog2 has been already installed [ $res ]\n"
@@ -120,10 +120,10 @@ function installGraylog2() {
         #exit 1
     fi
 
-    installPkg "apt-transport-https" "" ""
+    installPkg_COMMON_RUI "apt-transport-https" "" ""
     wget https://packages.graylog2.org/repo/packages/graylog-2.3-repository_latest.deb
     dpkg -i graylog-2.3-repository_latest.deb
-    installPkg "graylog-server" "" ""
+    installPkg_COMMON_RUI "graylog-server" "" ""
     rm -f /etc/init/graylog-server.override
 }
 
@@ -133,7 +133,7 @@ function installGraylog2() {
 #   node_name
 #   addr_bind
 #
-function configureElasticSearch() {
+function configureElasticSearch_GRAYLOG2_RUI() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0 ] : "
 
     if [[ ! -e /var/data/elasticsearch ]]; then
@@ -159,11 +159,11 @@ function configureElasticSearch() {
     declare -r local log_path="\/var\/log\/elasticsearch"
     declare -r local data_path="\/var\/data\/elasticsearch"
 
-    setField "$es_srvconf_path" "cluster.name" "$cluster_name_value" ""
-    setField "$es_srvconf_path" "node.name" "$node01_name_value" ""
-    setField "$es_srvconf_path" "network.host" "$addr_bind_value" ""
-    setField "$es_srvconf_path" "path.logs" "$log_path" ""
-    setField "$es_srvconf_path" "path.data" "$data_path" ""
+    setField_COMMON_RUI "$es_srvconf_path" "cluster.name" "$cluster_name_value" ""
+    setField_COMMON_RUI "$es_srvconf_path" "node.name" "$node01_name_value" ""
+    setField_COMMON_RUI "$es_srvconf_path" "network.host" "$addr_bind_value" ""
+    setField_COMMON_RUI "$es_srvconf_path" "path.logs" "$log_path" ""
+    setField_COMMON_RUI "$es_srvconf_path" "path.data" "$data_path" ""
     # set ES_HEAP_SIZE
     # @see http://docs.graylog.org/en/2.2/pages/configuration/elasticsearch.html
     declare -r local total_mem_kb="$(cat /proc/meminfo | awk '/MemTotal/ { print $2}')"
@@ -173,7 +173,7 @@ function configureElasticSearch() {
     printf "$debug_prefix ${GRN_ROLLUP_IT} ES Heap Size is $ES_HEAP_SIZE ${END_ROLLUP_IT}\n"
 }
 
-function fixGraylogMapping() {
+function fixGraylogMapping_GRAYLOG2_RUI() {
     if [[ -e stream_error.log ]]; then
         sh -c "echo "" > stream_error.log"
     fi
@@ -237,7 +237,7 @@ function fixGraylogMapping() {
    fi
 }
 
-function autostartElasticSearch() {
+function autostartElasticSearch_GRAYLOG2_RUI() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0 ] : "
 
     systemctl daemon-reload
@@ -245,7 +245,7 @@ function autostartElasticSearch() {
     systemctl start elasticsearch.service
 }
 
-function configureGraylog2() {
+function configureGraylog2_GRAYLOG2_RUI() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0 ] : "
 
     declare -r local passwd="$1"
@@ -264,12 +264,12 @@ function configureGraylog2() {
         cp -f "$graylog2_defcfg_path" "$graylog2_srvconf_dir/server.conf"
     fi
 
-    installPkg "pwgen" "" ""
+    installPkg_COMMON_RUI "pwgen" "" ""
     declare -r local secret_passwd="$(pwgen -N 1 -s 96)"
     declare -r local cyphered_root_passwd="$(echo -n $passwd | sha256sum | sed "s/-//")"
 
-    setField "$graylog2_srvconf_path" "password_secret" "$secret_passwd" " = "
-    setField "$graylog2_srvconf_path" "root_password_sha2" "$cyphered_root_passwd" " = "
+    setField_COMMON_RUI "$graylog2_srvconf_path" "password_secret" "$secret_passwd" " = "
+    setField_COMMON_RUI "$graylog2_srvconf_path" "root_password_sha2" "$cyphered_root_passwd" " = "
 
     declare -r local node_id_path="/etc/graylog/server/node-id"
     if [[ ! -e "$node_id_path" ]]; then
@@ -279,7 +279,7 @@ function configureGraylog2() {
     chmod 770 $node_id_path
 }
 
-function autostartGraylog2() {
+function autostartGraylog2_GRAYLOG2_RUI() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0 ] : "
 
     systemctl daemon-reload
@@ -287,13 +287,13 @@ function autostartGraylog2() {
     systemctl start graylog-server
 }
 
-function postClean() {
+function postClean_GRAYLOG2_RUI() {
     # clean after installing 
     # find . -mindepth 1 -maxdepth 1 \( -iname "*deb" -o -iname "*log" \) | xargs rm -f  
     find . -mindepth 1 -maxdepth 1 -iname "*deb" | xargs rm -f  
 }
 
-function removeGraylog2() {
+function removeGraylog2_GRAYLOG2_RUI() {
     systemctl stop graylog-server || true
     systemctl disable graylog-server || true
 
@@ -303,8 +303,8 @@ function removeGraylog2() {
     systemctl stop mogodb || true
     systemctl disable mogodb || true
     
-    removePkg "graylog-server" "" ""
-    removePkg "elasticsearch" "" ""
-    removePkg "mongodb-server" "" ""
+    removePkg_COMMON_RUI "graylog-server" "" ""
+    removePkg_COMMON_RUI "elasticsearch" "" ""
+    removePkg_COMMON_RUI "mongodb-server" "" ""
 }
 

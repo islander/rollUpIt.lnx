@@ -11,7 +11,7 @@ source ../../libs/addColors.sh
 source ../../libs/addVars.sh
 source ../../libs/lnx_debian09/commons.sh
 source ../../libs/lnx_debian09/sm.sh
-source ../../libs/lnx_debian09/configGraylog2.sh
+source ../../libs/lnx_debian09/configGraylog2_GRAYLOG2_RUI.sh
 
 # 1
 # test configIt:Configuring Graylogs2
@@ -20,26 +20,14 @@ function main() {
     printf "Entering $debug_prefix\n"
     declare -r local config_path="/etc/elasticsearch/elasticsearch.yml" 
 
-#    installGraylog2 
-#    configureElasticSearch "" "" "" 
-#    autostartElasticSearch
+#    installGraylog2_GRAYLOG2_RUI 
+#    configureElasticSearch_GRAYLOG2_RUI "" "" "" 
+#    autostartElasticSearch_GRAYLOG2_RUI
 #    sleep 10
-    fixGraylogMapping 
-#    configureGraylog2 "12345678"
-#    autostartGraylog2    
-#    postClean
-#    local res=""
-#    local ii_status="Status: install ok installed"
-#    res="$(dpkg-query -s $1 2>stream_errs.log | grep "$ii_status" || cat stream_errs.log)"
-#    echo "$debug_prefix $res"
-#    if [[  "$res" == "$ii_status" ]]; then
-#        echo "$debug_prefix Package is installed"
-#    else
-#        echo "$debug_prefix Package is not installed"
-#    fi
-#   res=""
-#   isPkgInstalled "pwgen" res
-#   echo "$res" 
+    fixGraylogMapping_GRAYLOG2_RUI 
+#    configureGraylog2_GRAYLOG2_RUI "12345678"
+#    autostartGraylog2_GRAYLOG2_RUI    
+#    postClean_GRAYLOG2_RUI
 }
 
 main 

@@ -14,7 +14,7 @@ source ../../libs/lnx_debian09/sm.sh
 source ../../libs/lnx_debian09/configFirewall.sh
 
 # 1
-# test ConfigIt: Iptables
+# test configFirewall.sh
 function main() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ]: "
     printf "$debug_prefix enter the function\n"
@@ -23,21 +23,25 @@ function main() {
     if [[ $# -eq 0 ]]; then
         printf "$debug_prefix Start configuring the firewall...\n"
 
-                installFw
+                installFw_FW_RUI
 
-                configFwRules "eth1" "172.16.102.0/24" "172.16.102.11" ""       
-                addFwLAN "eth0" "10.10.0.0/24" "10.10.0.1" "" "" ""
-                portForwarding "2222" "10.10.0.21" "22"
-                portForwarding "2223" "10.10.0.2" "22"
+                configFwRules_FW_RUI "eth1" "172.16.102.0/24" "172.16.102.11" ""
+                configFwRules_FW_RUI "eth1" "172.16.102.0/24" "172.16.102.11" ""
+                addFwLAN_FW_RUI "eth0" "10.10.0.0/24" "10.10.0.1" "" "" ""
+                addFwLAN_FW_RUI "eth0" "10.10.0.0/24" "10.10.0.1" "" "" ""
+                portForwarding_FW_RUI "2222" "10.10.0.21" "22"
+                portForwarding_FW_RUI "2222" "10.10.0.21" "22"
+                portForwarding_FW_RUI "2223" "10.10.0.2" "22"
+                portForwarding_FW_RUI "2223" "10.10.0.2" "22"
 
-                saveFwState
+                saveFwState_FW_RUI
 
         printf "$debug_prefix ...End configuring the firewall\n"
    else
         case $1 in 
             undo)
                 printf "$debug_prefix The first argument is $1\n"
-                clearFwState
+                clearFwState_FW_RUI
             ;;
 
             *)

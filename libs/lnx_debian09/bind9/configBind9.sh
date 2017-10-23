@@ -3,7 +3,7 @@
 PATH=/usr/sbin:/sbin:/bin:/usr/bin
 
 ############################################
-### Configuring Iptables Basic Rules #######
+### Configuring Bind9 DNS Server ### #######
 ############################################
 
 set -o errexit
@@ -11,24 +11,15 @@ set -o errexit
 set -o nounset
 set -o xtrace
 
-
 function prepare_Bind9_RUI() {
 local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
-    checkConfigFileSet_Bind9_RUI
-
     declare -rg OPTIONS_TEMPL_DIR_BIND9_RUI="$RSRC_DIR_ROLL_UP_IT/bind9/options.templ"
     declare -rg ZONES_TEMPL_DIR_BIND9_RUI="$RSRC_DIR_ROLL_UP_IT/bind9/zones.templ"
     declare -rg OUT_DIR_BIND9_RUI="$RSRC_DIR_ROLL_UP_IT/bind9/out"
+    declare -rg BIND9_SYSMD_SERVICE_RUI="bind9.service"
 
-    if [[ -d "$RSRC_DIR_ROLL_UP_IT/bind9/out/" ]]; then 
-        rm -Rf "$OUT_DIR_BIND9_RUI"
-    fi 
-
-    declare -rg SUDO_USER_RUI="$(getSudoUser_RUI)"
-
-    mkdir -p "$OUT_DIR_BIND9_RUI/zones"
-    mkdir -p "$OUT_DIR_BIND9_RUI/keys/local"
+    declare -rg SUDO_USER_RUI="$(getSudoUser_COMMON_RUI)"
 
     declare -rg COMMON_OPTS_TEMPL_BIND9_RUI="$OPTIONS_TEMPL_DIR_BIND9_RUI/named.conf.options.templ"
     declare -rg COMMON_OPTS_BIND9_RUI="$OPTIONS_TEMPL_DIR_BIND9_RUI/named.conf.options"
@@ -44,10 +35,38 @@ printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
     declare -rg TAB_SYM_RUI=$'\t'
     declare -rg DTAB_SYM_RUI=$'\t\t'
 
+    if [[ -d "$RSRC_DIR_ROLL_UP_IT/bind9/out/" ]]; then 
+        rm -Rf "$OUT_DIR_BIND9_RUI"
+    fi 
+    mkdir -p "$OUT_DIR_BIND9_RUI/zones"
+    mkdir -p "$OUT_DIR_BIND9_RUI/keys/local"
+
+    installBind9_RUI
+
+    stopBind9_RUI
+    checkConfigFileSet_Bind9_RUI
+
     cp "$COMMON_OPTS_TEMPL_BIND9_RUI" "$COMMON_OPTS_BIND9_RUI"
     cp "$ZONE_HEAD_TEMPL_BIND9_RUI" "$ZONE_HEAD_BIND9_RUI"
     
 printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
+}
+
+function installBind9_RUI() {
+    declare -Ar local install_pkgs=([0]="bind9" [1]="bind9-doc" [2]="bind9-utils")
+    for install_pkg in "${install_pkgs[@]}"; do
+        installPkg_COMMON_RUI "$install_pkg" "" ""
+    done
+}
+
+function stopBind9_RUI() {
+    systemctl stop "$BIND9_SYSMD_SERVICE_RUI" > stream_error.log
+    onErrors_COMMON_RUI "$debug_prefix Can't stop Bind9 service\n"
+}
+
+function startBind9_RUI() {
+    systemctl start "$BIND9_SYSMD_SERVICE_RUI" > stream_error.log
+    onErrors_COMMON_RUI "$debug_prefix Can't stop Bind9 service\n"
 }
 
 function checkConfigFileSet_Bind9_RUI() {
@@ -346,5 +365,6 @@ function post_Bind9_RUI() {
     mv "$COMMON_OPTS_BIND9_RUI" "$ZONE_HEAD_BIND9_RUI" "$OUT_DIR_BIND9_RUI"
 
     # rm -Rf "$RSRC_DIR_ROLL_UP_IT/bind9/out/"
+    startBind9_RUI 
 }
 

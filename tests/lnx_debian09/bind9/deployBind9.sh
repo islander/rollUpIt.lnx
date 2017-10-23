@@ -17,11 +17,12 @@ local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
     
     prepare_Bind9_RUI
-    setCommonOptions_Bind9_RUI "slave"
+    setCommonOptions_Bind9_RUI "master"
     
     declare -r local zone_000_name="workhorse.local"
     declare -A local zone_000_list_000=([0]="$zone_000_name" [1]="\/etc\/bind\/zones\/$zone_000_name")
     declare -A local zone_000_allow_transfers=([0]="10.10.0.0.3")
+    
     declare -A local zone_000_allow_update=([0]="key local-dnsupdater")
     
     declare -A local zone_000_param_list=( 

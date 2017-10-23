@@ -7,7 +7,7 @@ set -o xtrace
 source ../../libs/lnx_debian09/net.sh
 
 function main() {
-    flushNetwork
+    flushNetwork_NET_RUI
 }
 
 main

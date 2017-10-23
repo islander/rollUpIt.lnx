@@ -11,7 +11,7 @@ set -o nounset
 # arg0 - username
 # arg1 - password
 #
-function rollUpIt()
+function rollUpIt_SM_RUI()
 {
 local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 printf "$debug_prefix enter the function \n"
@@ -27,12 +27,12 @@ declare -i local debian_version="$(find /etc/ -type f -name debian_version | xar
 
 if [[ -n "$debian_version" && "$debian_version" -ge 8 ]]; then	
 	printf "$debug_prefix Debian version is $debian_version\n"
-	prepareSkel
-	installDefPkgSuit
-	createAdmUser $1 $2
-	prepareSudoersd $1
-    setLocale "en_US.UTF-8 UTF-8"
-    prepareSSH
+	prepareSkel_SM_RUI
+	installDefPkgSuit_SM_RUI
+	createAdmUser_SM_RUI $1 $2
+	prepareSudoersd_SM_RUI $1
+    setLocale_SM_RUI "en_US.UTF-8 UTF-8"
+    prepareSSH_SM_RUI
 else
 	printf "${RED_ROLLUP_IT} $debug_prefix Error: Can't run scripts there is no a suitable distibutive version ${END_ROLLUP_IT} \n"
     exit 1
@@ -42,7 +42,7 @@ fi
 #
 # arg0 - username 
 #
-function cloneProject() {
+function cloneProject_SM_RUI() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
     
@@ -67,10 +67,9 @@ printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
 #
-#
 # arg0 - error msg
 #
-function onErrors() {
+function onErrors_SM_RUI() {
         declare -r local err_msg=$([[ -z "$1" ]] && echo "ERROR!!!" || echo "$1")
         if [[ -e stream_error.log ]]; then
             errs="$(cat stream_error.log)"
@@ -82,7 +81,7 @@ function onErrors() {
         fi
 }
 
-function prepareSkel()
+function prepareSkel_SM_RUI()
 {
 local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 printf "$debug_prefix enter the function \n"
@@ -97,7 +96,7 @@ else
 fi
 }
 
-function prepareSudoersd()
+function prepareSudoersd_SM_RUI()
 {
 local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 printf "$debug_prefix enter the function \n"
@@ -136,7 +135,7 @@ else
 fi
 }
 
-function createAdmUser()
+function createAdmUser_SM_RUI()
 {
 local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 printf "$debug_prefix Enter the function \n"
@@ -158,7 +157,7 @@ if [[ -n "$1" && -n "$2" ]]; then
 
 	# check passwd matching
 	local isMatchingRes="false"
-	isPwdMatching $2 isMatchingRes	
+	isPwdMatching_COMMON_RUI $2 isMatchingRes	
 	if [[ "isMatchingRes" == "false" ]];
 	then
 		printf "${RED_ROLLUP_IT} $$debug_prefix Error: Can't create the user: Password does not match the regexp ${END_ROLLUP_IT} $\n"	
@@ -213,7 +212,7 @@ else
 fi
 }
 
-function installDefPkgSuit()
+function installDefPkgSuit_SM_RUI()
 {
 local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 declare -r local pkg_list=('sudo' 'tmux' 'vim' 'nethogs' 'git' 'tcpdump') 
@@ -229,7 +228,7 @@ if [[ -e stream_error.log ]]; then
     echo "" > stream_error.log
 fi
 
-isPkgInstalled $i res
+isPkgInstalled_COMMON_RUI $i res
 if [[ "$res" == "false" ]]; then
 	printf "$debug_prefix [ $i ] is not installed \n"
 	apt-get -y install $i 2>stream_error.log 1>stdout.log
@@ -254,7 +253,7 @@ apt-get -y dist-upgrade
 #
 # arg0 - locale name 
 #
-function setLocale() {
+function setLocale_SM_RUI() {
 local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
     declare -r local locale_gen_cfg_path="/etc/locale.gen"
@@ -289,7 +288,7 @@ printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
-function prepareSSH() {
+function prepareSSH_SM_RUI() {
     declare -r local daemon_cfg="/etc/ssh/sshd_config"
 
     sed -i "0,/.*PermitRootLogin.*$/ s/.*PermitRootLogin.*/PermitRootLogin yes/g" $daemon_cfg

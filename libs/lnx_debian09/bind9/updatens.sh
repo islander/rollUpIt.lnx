@@ -14,7 +14,7 @@ set -o nounset
 # arg0 - path to the private keys
 # arg1 - path to changes
 #
-function updateNS() {
+function updateNS_Bind9_RUI() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 

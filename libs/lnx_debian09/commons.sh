@@ -4,7 +4,7 @@
 # To be failed when it tries to use undeclare variables
 set -o nounset
 
-function isPwdMatching()
+function isPwdMatching_COMMON_RUI()
 {
 local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 printf "$debug_prefix enter the function \n"
@@ -53,7 +53,7 @@ else
 fi
 }
 
-function isPkgInstalled()
+function isPkgInstalled_COMMON_RUI()
 {
 local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 printf "$debug_prefix enter the function \n"
@@ -62,6 +62,7 @@ printf "$debug_prefix [$2] parameter #2 \n"
 
 if [[ -n $1 ]]; then
 	declare -r local ii_status="Status: install ok installed"
+    declare -r local no_info="is not installed and no information is available"
     local isInstalled=$2
     local errs=""
     local _res=""
@@ -72,6 +73,10 @@ if [[ -n $1 ]]; then
 	if [[  "$_res" == "$ii_status" ]]; then
 		eval $isInstalled="true"
     else
+        _res="$(dpkg-query -s $1 2>stream_error.log | grep "$no_info" || cat stream_error.log)" 
+        if [[ "$_res" == "$no_info" ]]; then
+            onErrors "$debug_prefix Can't install the package: no information is available\n"
+        fi 
 		eval $isInstalled="false"
     fi
 else
@@ -79,7 +84,12 @@ else
 fi
 }
 
-function installPkg() {
+#
+# arg0 - pkg_name
+# arg1 - prepare func calling
+# arg2 - quiet or not installation
+#
+function installPkg_COMMON_RUI() {
 local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 if [[ -z $1 ]]; then
 	printf "${RED_ROLLUP_IT} $debug_prefix Error: Package name has not been passed ${END_ROLLUP_IT} \n"
@@ -103,8 +113,8 @@ fi
 
 res=""
 local errs=""
-isPkgInstalled $1 res
-echo "isPkgInstalled res [ $res ]"
+isPkgInstalled_COMMON_RUI $1 res
+echo "isPkgInstalled_COMMON_RUI res [ $res ]"
 
 if [[ -e stream_error.log ]]; then
     echo "" > stream_error.log
@@ -140,14 +150,13 @@ else
 fi
 }
 
-#
 # 
 # pf - processing file
 # sf - search field
 # fv - a new field value
 # dm - fields delimeter
 #
-function setField() {
+function setField_COMMON_RUI() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0 ] : "
     declare -r local pf="$1"
     declare -r local sf="$2"
@@ -168,7 +177,7 @@ function setField() {
     sed -i "0,/.*$sf.*$/ s/.*$sf.*$/$replace_str/" $pf
 }
 
-function removePkg() {
+function removePkg_COMMON_RUI() {
 local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 if [[ -z $1 ]]; then
 	printf "${RED_ROLLUP_IT} $debug_prefix Error: Package name has not been passed ${END_ROLLUP_IT} \n"
@@ -183,8 +192,8 @@ fi
 
 res=""
 local errs=""
-isPkgInstalled $1 res
-echo "isPkgInstalled res [ $res ]"
+isPkgInstalled_COMMON_RUI $1 res
+echo "isPkgInstalled_COMMON_RUI res [ $res ]"
 
 if [[ -e stream_error.log ]]; then
     echo "" > stream_error.log
@@ -208,6 +217,6 @@ else
 fi
 }
 
-function getSudoUser_RUI() {
+function getSudoUser_COMMON_RUI() {
     echo "$([[ -n "$SUDO_USER" ]] && echo "$SUDO_USER" || echo "$(whoami)")"
 }

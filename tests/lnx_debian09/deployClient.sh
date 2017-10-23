@@ -10,7 +10,6 @@ source ../../libs/addColors.sh
 source ../../libs/addVars.sh
 source ../../libs/lnx_debian09/commons.sh
 source ../../libs/lnx_debian09/sm.sh
-source ../../libs/lnx_debian09/sm.sh
 
 function main() {
 local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
@@ -24,7 +23,7 @@ printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
     declare -r local user="$1"
     declare -r local pwd="$2"
 
-    rollUpIt $user $pwd
+    rollUpIt_SM_RUI $user $pwd
 
 printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 }
