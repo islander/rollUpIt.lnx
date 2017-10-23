@@ -53,20 +53,23 @@ printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
 function installBind9_RUI() {
-    declare -Ar local install_pkgs=([0]="bind9" [1]="bind9-doc" [2]="bind9-utils")
+local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
+    declare -Ar local install_pkgs=([0]="bind9" [1]="bind9-doc" [2]="bind9utils")
     for install_pkg in "${install_pkgs[@]}"; do
         installPkg_COMMON_RUI "$install_pkg" "" ""
     done
+printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
 
 function stopBind9_RUI() {
     systemctl stop "$BIND9_SYSMD_SERVICE_RUI" > stream_error.log
-    onErrors_COMMON_RUI "$debug_prefix Can't stop Bind9 service\n"
+    onErrors_SM_RUI "$debug_prefix Can't stop Bind9 service\n"
 }
 
 function startBind9_RUI() {
     systemctl start "$BIND9_SYSMD_SERVICE_RUI" > stream_error.log
-    onErrors_COMMON_RUI "$debug_prefix Can't stop Bind9 service\n"
+    onErrors_SM_RUI "$debug_prefix Can't stop Bind9 service\n"
 }
 
 function checkConfigFileSet_Bind9_RUI() {
@@ -343,7 +346,7 @@ if [[ -e stream_error.log ]]; then
 fi
 
 dnssec-keygen -a $key_alg -b $key_size -n USER $key_name 2>stream_error.log
-onErrors "$debug_prefix ${RED_ROLLUP_IT} Error DNS key generation"
+onErrors_SM_RUI "$debug_prefix ${RED_ROLLUP_IT} Error DNS key generation"
 
 declare -r local key_value="$(awk 'BEGIN{RS="\n";FS=": "} NR==3{ print $2 }' K$key_name*.private)"
 
@@ -363,6 +366,7 @@ function post_Bind9_RUI() {
 
     # cp "$COMMON_OPTS_BIND_RUI" "$ZONE_HEAD_BIND_RUI" "/etc/bind/"
     mv "$COMMON_OPTS_BIND9_RUI" "$ZONE_HEAD_BIND9_RUI" "$OUT_DIR_BIND9_RUI"
+    # cp "$OUT_DIR_BIND9_RUI"/* "/etc/bind/"
 
     # rm -Rf "$RSRC_DIR_ROLL_UP_IT/bind9/out/"
     startBind9_RUI 

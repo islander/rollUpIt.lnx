@@ -62,7 +62,7 @@ printf "$debug_prefix [$2] parameter #2 \n"
 
 if [[ -n $1 ]]; then
 	declare -r local ii_status="Status: install ok installed"
-    declare -r local no_info="is not installed and no information is available"
+    declare -r local no_info="no information is available"
     local isInstalled=$2
     local errs=""
     local _res=""
@@ -73,9 +73,13 @@ if [[ -n $1 ]]; then
 	if [[  "$_res" == "$ii_status" ]]; then
 		eval $isInstalled="true"
     else
-        _res="$(dpkg-query -s $1 2>stream_error.log | grep "$no_info" || cat stream_error.log)" 
-        if [[ "$_res" == "$no_info" ]]; then
-            onErrors "$debug_prefix Can't install the package: no information is available\n"
+        _res="$(dpkg-query -s $1 2>stream_error.log | grep "$no_info" || cat stream_error.log)"
+        errs="$_res"
+        _res="$(echo "$_res" | grep "$no_info")" 
+        if [[ -n "$_res" ]]; then
+            onErrors_SM_RUI "$debug_prefix Can't install the package: no information is available\n"
+        else
+            printf "$debug_prefix Can't install the package: $errs\n"
         fi 
 		eval $isInstalled="false"
     fi

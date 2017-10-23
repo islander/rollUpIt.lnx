@@ -21,7 +21,7 @@ printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
     
     declare -r local zone_000_name="workhorse.local"
     declare -A local zone_000_list_000=([0]="$zone_000_name" [1]="\/etc\/bind\/zones\/$zone_000_name")
-    declare -A local zone_000_allow_transfers=([0]="10.10.0.0.3")
+    declare -A local zone_000_allow_transfers=([0]="10.10.0.0.5")
     
     declare -A local zone_000_allow_update=([0]="key local-dnsupdater")
     
@@ -49,7 +49,7 @@ printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
     
     declare -r local zone_001_name="0.10.10.in-addr.arpa"
     declare -A local zone_001_list_000=([0]="$zone_001_name" [1]="\/etc\/bind\/zones\/$zone_001_name")
-    declare -A local zone_001_allow_transfers=([0]="10.10.0.0.3")
+    declare -A local zone_001_allow_transfers=([0]="10.10.0.0.5")
     declare -A local zone_001_allow_update=([0]="key local-dnsupdater")
     declare -A local zone_001_param_list=( 
         # TTL
@@ -93,11 +93,9 @@ local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
 printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 
     declare -r local ns_type=$([[ -z "$1" ]] && echo "master" || echo "$1")
-    declare -A local acl_list_001=([0]="192.168.0.1/16" [1]="10.10.10.0/16" [2]="172.16.0.0/24")
-    declare -A local acl_list_002=([0]="192.168.2.1/16")
-    declare -A local acl_list_003=([0]="192.168.3.1/16")
+    declare -A local acl_list_001=([0]="10.10.0.0/24")
     declare -A local forwarders_list=([0]="192.168.0.10" [1]="192.168.0.11")
-    declare -r local acl_name="branch01"
+    declare -r local acl_name="LAN01"
     declare -r lcoal isRecursion="true"
 
     setACL_Bind9_RUI "$acl_name" acl_list_001 "$isRecursion" 
@@ -106,7 +104,7 @@ printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
     printf "$debug_prefix ns_type: $ns_type\n"
     if [[ "$ns_type" == "master" ]]; then
         printf "$debug_prefix ${GRN_ROLLUP_IT} Choose: MASTER ${END_ROLLUP_IT} \n"
-        declare -A local transfers_list=([0]="10.10.0.3")
+        declare -A local transfers_list=([0]="10.10.0.5")
         setTransfers_Bind9_RUI transfers_list
     else
         printf "$debug_prefix  ${GRN_ROLLUP_IT} Choose SLAVE ${END_ROLLUP_IT} \n"
