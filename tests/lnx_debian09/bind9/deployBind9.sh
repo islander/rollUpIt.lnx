@@ -22,16 +22,14 @@ printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
     declare -r local zone_000_name="workhorse.local"
     declare -A local zone_000_list_000=([0]="$zone_000_name" [1]="\/etc\/bind\/zones\/$zone_000_name")
     declare -A local zone_000_allow_transfers=([0]="10.10.0.0.5")
-    
     declare -A local zone_000_allow_update=([0]="key local-dnsupdater")
-    
     declare -A local zone_000_param_list=( 
         # TTL
         [0]="4H" 
         # SOA header 
         [1]="ns1.$zone_000_name.\tadmin@$zone_000_name." 
         # Serial Number
-        [2]="1" 
+        [2]="0" 
         # Refresh
         [3]="4H"
         # Retry
@@ -41,11 +39,10 @@ printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
         # Minimum TTL
         [6]="4H" 
         # NS01
-        [7]="ns01" 
+        [7]="ns01:10.10.0.4" 
         # NS02
-        [8]="ns02" 
+        [8]="ns02:10.10.0.5" 
         )
-
     
     declare -r local zone_001_name="0.10.10.in-addr.arpa"
     declare -A local zone_001_list_000=([0]="$zone_001_name" [1]="\/etc\/bind\/zones\/$zone_001_name")
@@ -67,9 +64,9 @@ printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
         # Minimum TTL
         [6]="3600" 
         # NS01
-        [7]="ns01" 
+        [7]="ns01:10.10.0.3" 
         # NS02
-        [8]="ns02" 
+        [8]="ns02:10.10.0.4" 
         )
 
     setZoneOptions_Bind9_RUI zone_000_list_000 zone_000_allow_transfers \
@@ -100,14 +97,14 @@ printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 
     setACL_Bind9_RUI "$acl_name" acl_list_001 "$isRecursion" 
     setForwarders_Bind9_RUI forwarders_list  "first"
-    setOption_Bind9_RUI "directory" "\/var\/\bind\/cache" "$COMMON_OPTS_BIND9_RUI"
+    setOption_Bind9_RUI "directory" "\"\/var\/cache\/\bind\"" "$COMMON_OPTS_BIND9_RUI"
     printf "$debug_prefix ns_type: $ns_type\n"
     if [[ "$ns_type" == "master" ]]; then
         printf "$debug_prefix ${GRN_ROLLUP_IT} Choose: MASTER ${END_ROLLUP_IT} \n"
         declare -A local transfers_list=([0]="10.10.0.5")
         setTransfers_Bind9_RUI transfers_list
     else
-        printf "$debug_prefix  ${GRN_ROLLUP_IT} Choose SLAVE ${END_ROLLUP_IT} \n"
+        printf "$debug_prefix  ${GRN_ROLLUP_IT} Choose: SLAVE ${END_ROLLUP_IT} \n"
         declare -A local transfers_none=([0]="\"none\"")
         setTransfers_Bind9_RUI transfers_none
     fi

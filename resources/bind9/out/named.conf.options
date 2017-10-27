@@ -12,7 +12,7 @@ acl LAN01 {
 
 options {
 	// Example, 2. Directory
-directory /var/bind/cache;
+directory "/var/cache/bind";
    
     // Example, 3. LISTEN-ON 
     // listen-on {

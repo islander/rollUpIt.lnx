@@ -38,11 +38,30 @@ printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
     if [[ -d "$RSRC_DIR_ROLL_UP_IT/bind9/out/" ]]; then 
         rm -Rf "$OUT_DIR_BIND9_RUI"
     fi 
+
+	mkdir -p "$OUT_DIR_BIND9_RUI"
+
+    rsync -rtvu "/etc/bind/" "$OUT_DIR_BIND9_RUI/"
     mkdir -p "$OUT_DIR_BIND9_RUI/zones"
     mkdir -p "$OUT_DIR_BIND9_RUI/keys/local"
 
-    installBind9_RUI
+	if [[ -d "/etc/bind/keys" ]]; then 
+		rm -Rf "/etc/bind/keys"
+	fi 	
+	if [[ -d "/etc/bind/zones" ]]; then 
+		rm -Rf "/etc/bind/zones"
+	fi 	
+	mkdir -p "/etc/bind/local/keys"
+	mkdir "/etc/bind/zones"
 
+#	if [[ -e "/etc/bind/named.conf.options" ]]; then
+#		rm "/etc/bind/named.conf.options"
+#	fi
+#	if [[ -e "/etc/bind/named.conf.local" ]]; then
+#		rm "/etc/bind/named.conf.local"
+#	fi
+
+    installBind9_RUI
     stopBind9_RUI
     checkConfigFileSet_Bind9_RUI
 
@@ -69,7 +88,7 @@ function stopBind9_RUI() {
 
 function startBind9_RUI() {
     systemctl start "$BIND9_SYSMD_SERVICE_RUI" > stream_error.log
-    onErrors_SM_RUI "$debug_prefix Can't stop Bind9 service\n"
+    onErrors_SM_RUI "$debug_prefix Can't start Bind9 service\n"
 }
 
 function checkConfigFileSet_Bind9_RUI() {
@@ -228,8 +247,6 @@ function setZoneOptions_Bind9_RUI() {
         exit 1
     fi
 
-
-    #TODO replace user_name with global variable
     cp "$ZONE_OPTS_TEMPL_BIND9_RUI" "$ZONE_OPTS_BIND9_RUI"
 
     declare -n zone_list_000="$1"
@@ -297,8 +314,15 @@ function packZoneFile_Bind9_RUI(){
     declare -r local zone_retry="${zf_parameters[4]}"
     declare -r local zone_expire="${zf_parameters[5]}"
     declare -r local zone_minimum_ttl="${zf_parameters[6]}"
-    declare -r local zone_ns01="${zf_parameters[7]}"
-    declare -r local zone_ns02="${zf_parameters[8]}"
+    declare -r local zone_ns01="$(echo "${zf_parameters[7]}" | awk 'BEGIN{FS=":";} { print $1 }')"
+    declare -r local zone_ns01_addr="$(echo "${zf_parameters[7]}" | awk 'BEGIN{FS=":";} { print $2 }')"
+    declare -r local zone_ns02="$(echo "${zf_parameters[8]}" | awk 'BEGIN{FS=":";} { print $1 }')"
+    declare -r local zone_ns02_addr="$(echo "${zf_parameters[8]}" | awk 'BEGIN{FS=":";} { print $2 }')"
+
+	printf "$debug_prefix ${GRN_ROLLUP_IT} [ prm_ns01 ${zf_parameters[7]} ] ${END_ROLLUP_IT}\n"
+	printf "$debug_prefix ${GRN_ROLLUP_IT} [ prm_ns02 ${zf_parameters[8]} ] ${END_ROLLUP_IT}\n"
+	printf "$debug_prefix ${GRN_ROLLUP_IT} [ NS01: $zone_ns01 ] [ NS01_addr: $zone_ns01_addr ] ${END_ROLLUP_IT}\n"
+	printf "$debug_prefix ${GRN_ROLLUP_IT} [ NS02: $zone_ns02 ] [ NS02_addr: $zone_ns02_addr ] ${END_ROLLUP_IT}\n"
 
     sed -i '/; <TTL>/a \
 $TTL '"$zone_ttl"'' "$zone_name_fp"
@@ -323,9 +347,19 @@ $TTL '"$zone_ttl"'' "$zone_name_fp"
     
     sed -i '/; <NS-01>/a \
 @'"${DTAB_SYM_RUI}"'IN'"${DTAB_SYM_RUI}"'NS'"${DTAB_SYM_RUI}"''"$zone_ns01"'' "$zone_name_fp"
+    sed -i '/; <NS-01-addr>/a \
+'"$zone_ns01"''"${DTAB_SYM_RUI}"'IN'"${DTAB_SYM_RUI}"'A'"${DTAB_SYM_RUI}"''"$zone_ns01_addr"'' "$zone_name_fp"
 
     sed -i '/; <NS-02>/a \
 @'"${DTAB_SYM_RUI}"'IN'"${DTAB_SYM_RUI}"'NS'"${DTAB_SYM_RUI}"''"$zone_ns02"'' "$zone_name_fp"
+    sed -i '/; <NS-02-addr>/a \
+'"$zone_ns02"''"${DTAB_SYM_RUI}"'IN'"${DTAB_SYM_RUI}"'A'"${DTAB_SYM_RUI}"''"$zone_ns02_addr"'' "$zone_name_fp"
+
+    local res="$(named-checkzone $zone_name $zone_name_fp)"
+    if [[ -z "$(echo $res | grep -e 'OK')" ]]; then
+        echo $res > stream_error.log
+        onErrors_SM_RUI "$debug_prefix Error $zone_name_fp, see $res"
+    fi
 }
 
 #
@@ -352,12 +386,24 @@ declare -r local key_value="$(awk 'BEGIN{RS="\n";FS=": "} NR==3{ print $2 }' K$k
 
 echo "key $key_name { 
     algorithm $key_alg;
-    secrete \"$key_value\";
+    secret \"$key_value\";
 };" > "$OUT_DIR_BIND9_RUI/keys/local/dnskeys.conf"
 
 rm -f *.private *.key
 
 printf "$debug_prefix ${GRN_ROLLUP_IT} Exit the function ${END_ROLLUP_IT} \n"
+}
+
+function deployCfg_Bind9_RUI() {
+    local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
+    printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
+    
+    if [[ ! -e "$OUT_DIR_BIND9_RUI" ]]; then
+        onErrors_SM_RUI "$debug_prefix ${RED_ROLLUP_IT} No out dir exists ${END_ROLLUP_IT}\n"
+    fi
+    rsync -rtvu $OUT_DIR_BIND9_RUI/ /etc/bind/
+
+    printf "$debug_prefix ${GRN_ROLLUP_IT} Exit the function ${END_ROLLUP_IT} \n"
 }
 
 function post_Bind9_RUI() {
@@ -368,7 +414,34 @@ function post_Bind9_RUI() {
     mv "$COMMON_OPTS_BIND9_RUI" "$ZONE_HEAD_BIND9_RUI" "$OUT_DIR_BIND9_RUI"
     # cp "$OUT_DIR_BIND9_RUI"/* "/etc/bind/"
 
-    # rm -Rf "$RSRC_DIR_ROLL_UP_IT/bind9/out/"
+#    deployCfg_Bind9_RUI
+
+#    local errs="$(named-checkconf /etc/bind/named.conf.options)"
+#    if [[ -n "$errs" ]]; then
+#        echo $errs > stream_error.log
+#        onErrors_SM_RUI "$debug_prefix Error $COMMON_OPTS_BIND9_RUI, see $errs"
+#    fi
+#
+#    local errs="$(named-checkconf /etc/bind/named.conf.local)"
+#    if [[ -n "$errs" ]]; then
+#        echo $errs > stream_error.log
+#        onErrors_SM_RUI "$debug_prefix Error $ZONE_HEAD_BIND9_RUI, see $errs"
+#    fi
+
+    local errs="$(named-checkconf $OUT_DIR_BIND9_RUI)"
+    if [[ -n "$errs" ]]; then
+        echo $errs > stream_error.log
+        onErrors_SM_RUI "$debug_prefix Error $COMMON_OPTS_BIND9_RUI, see $errs"
+    fi
+
+    local errs="$(named-checkconf $OUT_DIR_BIND9_RUI)"
+    if [[ -n "$errs" ]]; then
+        echo $errs > stream_error.log
+        onErrors_SM_RUI "$debug_prefix Error $ZONE_HEAD_BIND9_RUI, see $errs"
+    fi
+
     startBind9_RUI 
+
+    printf "$debug_prefix ${GRN_ROLLUP_IT} Exit the function ${END_ROLLUP_IT} \n"
 }
 

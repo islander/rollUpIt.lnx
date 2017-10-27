@@ -17,6 +17,10 @@ $TTL 3600
 
 ; <NS-01>
 @		IN		NS		ns01
+; <NS-01-addr>
+ns01		IN		A		10.10.0.3
 ; <NS-02>
 @		IN		NS		ns02
+; <NS-02-addr>
+ns02		IN		A		10.10.0.4
 www         IN      CNAME   @

@@ -5,7 +5,7 @@ $TTL 4H
 ; <SOA-HEADER>
 @		IN		SOA		ns1.workhorse.local.	admin@workhorse.local. (
 ; <SOA-SERIALNUMBER>
-        1
+        0
 ; <SOA-REFRESH>
         4H
 ; <SOA-RETRY>
@@ -17,6 +17,10 @@ $TTL 4H
 
 ; <NS-01>
 @		IN		NS		ns01
+; <NS-01-addr>
+ns01		IN		A		10.10.0.4
 ; <NS-02>
 @		IN		NS		ns02
+; <NS-02-addr>
+ns02		IN		A		10.10.0.5
 www         IN      CNAME   @
