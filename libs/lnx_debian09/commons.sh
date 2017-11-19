@@ -62,7 +62,8 @@ printf "$debug_prefix [$2] parameter #2 \n"
 
 if [[ -n $1 ]]; then
 	declare -r local ii_status="Status: install ok installed"
-    declare -r local no_info="no information is available"
+    declare -r local ni_status="No package found"
+
     local isInstalled=$2
     local errs=""
     local _res=""
@@ -70,18 +71,18 @@ if [[ -n $1 ]]; then
         echo "" > stream_error.log
     fi
     _res="$(dpkg-query -s $1 2>stream_error.log | grep "$ii_status" || cat stream_error.log)"
-	if [[  "$_res" == "$ii_status" ]]; then
+	if [[ "$_res" == "$ii_status" ]]; then
 		eval $isInstalled="true"
+        printf "$debug_prefix The package is not installed\n"
     else
-        _res="$(dpkg-query -s $1 2>stream_error.log | grep "$no_info" || cat stream_error.log)"
-        errs="$_res"
-        _res="$(echo "$_res" | grep "$no_info")" 
-        if [[ -n "$_res" ]]; then
+        printf "$debug_prefix Check can we install the package?\n"
+        _res="$(apt-cache show $1 2>stream_error.log || cat stream_error.log)"
+        if [[ -n "$(cat stream_error.log | grep $ni_status)" ]]; then
             onErrors_SM_RUI "$debug_prefix Can't install the package: no information is available\n"
-        else
-            printf "$debug_prefix Can't install the package: $errs\n"
-        fi 
-		eval $isInstalled="false"
+        else 
+            printf "$debug_prefix The package is not installed. Package info: $ \n"
+		    eval $isInstalled="false"
+        fi
     fi
 else
 	printf "$debug_prefix no package name passed \n"
