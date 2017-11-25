@@ -30,7 +30,7 @@ function configFwRules_FW_RUI() {
     fi     
     
     clearFwState_FW_RUI    
-    defineFwConstants_FW_RUI "$1" "$2" "$3" ""
+    defineFwConstants_FW_RUI "$1" "$2" "$3" "$4"
     setCommonFwRules_FW_RUI 
 
     printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
@@ -272,12 +272,14 @@ function saveFwState_FW_RUI() {
     local debug_prefix="debug: [$0] [ $FUNCNAME[0] ] : "
     printf "$debug_prefix ${GRN_ROLLUP_IT} ENTER the function ${END_ROLLUP_IT} \n"
 
+    declare -r local ipset_rules_v4_fp="/etc/ipset/ipset.rules.v4"
     declare -r local ipt_store_file="/etc/iptables/rules.v4"
     if [[ ! -e "$ipt_store_file" ]]; then
         printf "$debug_prefix ${RED_ROLLUP_IT} Error: there is no the iptables rules store file ${END_ROLLUP_IT}\n"
         exit 1
     fi
 
+    ipset save > "$ipset_rules_v4_fp"
     iptables-save > "$ipt_store_file"
 
     printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
