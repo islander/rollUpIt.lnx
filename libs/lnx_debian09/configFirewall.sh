@@ -185,10 +185,13 @@ function setCommonFwRules_FW_RUI() {
     iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
     iptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 
-    iptables -A INPUT -p tcp -m set --match-set IN_TCP_FW_PORTS dst -m state --state NEW -j ACCEPT
+#    iptables -A INPUT -p tcp -m set --match-set IN_TCP_FW_PORTS dst -m state --state NEW -j ACCEPT
 
     # ------ Allow ICMP----------------------------------------------------- #
     iptables -A OUTPUT -p icmp --icmp-type echo-request -m state --state NEW -j ACCEPT
+
+    iptables -A INPUT -i "$WAN_NIC_RUI" -s "$TRUSTED_WAN_ADDR_RUI" -p tcp --dport "$SSH_PORT_RUI" -m conntrack --ctstate NEW -j ACCEPT
+#    iptables -A INPUT -s 10.0.2.0/24 -p tcp --dport "$SSH_PORT_RUI" -m conntrack --ctstate NEW -j ACCEPT
 
     openFilterOutputPorts_FW_RUI
 
@@ -197,7 +200,6 @@ function setCommonFwRules_FW_RUI() {
 #    syncFloodProtection
 
     # enable incoming ssh
-    iptables -A INPUT -i "$WAN_NIC_RUI" -s "$TRUSTED_WAN_ADDR_RUI" -p tcp --dport "$SSH_PORT_RUI" -m conntrack --ctstate NEW -j ACCEPT
 
     # We use the default policy [INPUT] [DROP]
 #    iptables -A INPUT -m state --state NEW -i "$WAN_NIC_RUI" -j DROP
@@ -277,6 +279,14 @@ function saveFwState_FW_RUI() {
     if [[ ! -e "$ipt_store_file" ]]; then
         printf "$debug_prefix ${RED_ROLLUP_IT} Error: there is no the iptables rules store file ${END_ROLLUP_IT}\n"
         exit 1
+    fi
+
+    if [[ ! -e "$ipset_rules_v4_fp" ]]; then
+        printf "$debug_prefix ${GRN_ROLLUP_IT} Debug: there is no the ipset rules store file: create it ${END_ROLLUP_IT}\n"
+        if [[ ! -e "/etc/ipset" ]]; then
+            mkdir "/etc/ipset"
+        fi
+        touch "$ipset_rules_v4_fp"
     fi
 
     ipset save > "$ipset_rules_v4_fp"

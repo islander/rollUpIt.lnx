@@ -25,8 +25,8 @@ function main() {
 
                 installFw_FW_RUI
 
-                configFwRules_FW_RUI "enp0s3" "172.16.101.0/24" "172.16.101.4" "192.168.1.1/24"
-                addFwLAN_FW_RUI "enp0s8" "10.10.0.0/24" "10.10.0.1" "" "" ""
+                configFwRules_FW_RUI "enp0s3" "10.0.2.0/24" "10.0.2.15" "10.0.2.0/24"
+                addFwLAN_FW_RUI "enp0s8" "172.16.0.0/27" "172.16.0.1" "" "" ""
 
                 saveFwState_FW_RUI
 
