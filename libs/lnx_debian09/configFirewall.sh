@@ -144,6 +144,9 @@ function defineFwConstants_FW_RUI() {
     # ------- SSH ports ------------
     declare -rg SSH_PORT_RUI="22"
     ipset add OUT_TCP_FW_PORTS "$SSH_PORT_RUI"
+    
+    declare -rg NTP_PORT_RUI="123"
+    ipset add OUT_UDP_FWR_PORTS "$NTP_PORT_RUI"
 
     printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"
 }
@@ -161,6 +164,11 @@ function clearFwState_FW_RUI() {
     iptables -t raw -F
     iptables -X
     iptables -Z
+
+    for chain in INPUT FORWARD OUTPUT
+    do
+        iptables -P $chain ACCEPT
+    done 
  
     ipset flush
     ipset destroy
@@ -191,7 +199,6 @@ function setCommonFwRules_FW_RUI() {
     iptables -A OUTPUT -p icmp --icmp-type echo-request -m state --state NEW -j ACCEPT
 
     iptables -A INPUT -i "$WAN_NIC_RUI" -s "$TRUSTED_WAN_ADDR_RUI" -p tcp --dport "$SSH_PORT_RUI" -m conntrack --ctstate NEW -j ACCEPT
-#    iptables -A INPUT -s 10.0.2.0/24 -p tcp --dport "$SSH_PORT_RUI" -m conntrack --ctstate NEW -j ACCEPT
 
     openFilterOutputPorts_FW_RUI
 
@@ -309,10 +316,9 @@ function addFwLAN_FW_RUI() {
 
     declare -r local lan_nic="$1"
     declare -r local lan_addr="$2"
-    declare -r local lan_gw=$([ -z "$3" ] && echo "10.10.0.1" || echo "$3")
+    declare -r local lan_gw=$([ -z "$3" ] && echo "192.168.77.1" || echo "$3")
     declare -r local out_tcp_port_set=$([ -z "$4" ] && echo "OUT_TCP_FWR_PORTS" || echo "$4")
     declare -r local out_udp_port_set=$([ -z "$5" ] && echo "OUT_UDP_FWR_PORTS" || echo "$5")
-
 
     # -- Start ICMP -------------------------------------------------------- #
     iptables -A FORWARD -p icmp --icmp-type echo-request -s "$lan_addr" -d "0/0" -m state --state NEW -j ACCEPT
@@ -323,7 +329,6 @@ function addFwLAN_FW_RUI() {
 #    iptables -A FORWARD -m state --state NEW -i "$WAN_NIC_RUI" -o "$lan_nic" -j DROP
 
     iptables -A FORWARD -i "$lan_nic" -o "$WAN_NIC_RUI" -s "$lan_addr" -p udp -m set --match-set "$out_udp_port_set" dst -m state --state NEW -j ACCEPT
-   
     iptables -A FORWARD -i "$lan_nic" -o "$WAN_NIC_RUI" -s "$lan_addr" -p tcp -m set --match-set "$out_tcp_port_set" dst -m state --state NEW -j ACCEPT
 
     printf "$debug_prefix ${GRN_ROLLUP_IT} EXIT the function ${END_ROLLUP_IT} \n"

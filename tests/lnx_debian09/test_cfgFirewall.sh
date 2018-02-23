@@ -7,11 +7,11 @@ set -o xtrace
 #exec 1>stdout.log 
 exec 2>stderr.log
 
-source ../../libs/addColors.sh
-source ../../libs/addVars.sh
-source ../../libs/lnx_debian09/commons.sh
-source ../../libs/lnx_debian09/sm.sh
-source ../../libs/lnx_debian09/configFirewall.sh
+source libs/addColors.sh
+source libs/addVars.sh
+source libs/lnx_debian09/commons.sh
+source libs/lnx_debian09/sm.sh
+source libs/lnx_debian09/configFirewall.sh
 
 # 1
 # test configFirewall.sh
@@ -26,7 +26,10 @@ function main() {
                 installFw_FW_RUI
 
                 configFwRules_FW_RUI "enp0s3" "10.0.2.0/24" "10.0.2.15" "10.0.2.0/24"
-                addFwLAN_FW_RUI "enp0s8" "172.16.0.0/27" "172.16.0.1" "" "" ""
+                # LAN
+                addFwLAN_FW_RUI "enp0s8" "172.16.76.0/23" "" "" "" ""
+                # DMZ
+                addFwLAN_FW_RUI "enp0s8" "192.168.77.0/27" "" "" "" ""
 
                 saveFwState_FW_RUI
 
